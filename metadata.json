@@ -1,0 +1,8 @@
+{
+  "name": "K-Notes",
+  "description": "El diario de terapia que se escribe solo mientras te desahogas. Software de auto-reflexión basado en TCC para pacientes y automatización de análisis funcional para terapeutas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
