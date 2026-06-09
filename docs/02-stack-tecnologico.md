@@ -11,7 +11,9 @@
 | Estilos | Tailwind CSS 4 (plugin oficial para Vite) |
 | Animaciones | Motion (`motion/react`) |
 | Iconos | lucide-react |
-| IA | OpenAI (`openai`) — ChatGPT, server-side en `server/` |
+| IA | OpenAI (`openai`) — ChatGPT + Whisper, server-side en `server/` |
+| Auth / DB | Supabase (`@supabase/supabase-js`) — Auth, profiles, nudos, chat_sessions |
+| i18n | react-i18next — Login, ajustes y navegación (es/en) |
 | Servidor API | Express 4 — `server/index.ts`, puerto `PORT` (3099) |
 
 ## Dependencias de producción
@@ -48,5 +50,7 @@
 ## Notas
 
 - El chat llama a `POST /api/chat` (proxy de Vite → Express). La clave `OPENAI_API_KEY` **nunca** se expone al frontend.
+- Auth con Supabase: sesión en `sessionStorage`, redirect post-login a `/bienvenida`.
 - El alias `@` apunta a la raíz del proyecto (configurado tanto en `vite.config.ts` como en `tsconfig.json`).
 - El proyecto usa **ESM** (`"type": "module"` en `package.json`).
+- Breakpoint móvil/desktop del chat y drawer: `md` (768px).

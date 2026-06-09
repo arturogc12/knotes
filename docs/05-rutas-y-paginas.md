@@ -7,12 +7,13 @@
 | `/` | `Home` | ✅ (Navbar + Footer) | Landing para pacientes. |
 | `/profesionales` | `Professionals` | ✅ (Navbar + Footer) | Landing para terapeutas. |
 | `/login` | `Login` | ❌ Pantalla completa | Acceso con Supabase Auth (Magic Link + Google). |
-| `/chat` | `Chat` | ✅ (PatientAppLayout) | Conversación activa con K-Notes. **Ruta protegida.** |
-| `/nudos` | `Nudos` | ✅ (PatientAppLayout) | Historial de nudos (mock). **Ruta protegida.** |
-| `/nudos/:id` | `NudoDetail` | ✅ (PatientAppLayout) | Detalle A-B-C + exportar PDF (placeholder). **Ruta protegida.** |
+| `/bienvenida` | `PwaWelcome` | ❌ Pantalla completa | Guía instalación PWA (solo 1ª vez). **Ruta protegida.** |
+| `/chat` | `Chat` + `PwaWelcomeRedirect` | ✅ (PatientAppLayout) | Conversación activa con K-Notes. **Ruta protegida.** |
+| `/nudos` | `Nudos` | ✅ (PatientAppLayout) | Historial de nudos (Supabase). **Ruta protegida.** |
+| `/nudos/:id` | `NudoDetail` | ✅ (PatientAppLayout) | Detalle A-B-C de un nudo. **Ruta protegida.** |
 | `/ajustes` | `Settings` | ✅ (PatientAppLayout) | Cuenta, suscripción, idioma y cierre de sesión. **Ruta protegida.** |
 
-> Definidas en `src/main.tsx`. Las rutas de marketing (`/`, `/profesionales`) usan `Layout`; las de paciente autenticado (`/chat`, `/nudos`, `/ajustes`) comparten `PatientAppLayout` y están envueltas en `ProtectedRoute`.
+> Definidas en `src/main.tsx`. Marketing (`/`, `/profesionales`) usa `Layout`; paciente autenticado usa `ProtectedRoute`. `/bienvenida` está fuera de `PatientAppLayout`; `/chat`, `/nudos` y `/ajustes` comparten el shell de paciente.
 
 ---
 
@@ -22,11 +23,10 @@ Layout post-login en `src/components/patient/PatientAppLayout.tsx`:
 
 - Fondo cálido con gradiente y blobs decorativos.
 - Contenedor centrado `max-w-4xl` en desktop.
-- **Navegación por pestañas:** barra inferior en móvil, segmented control en desktop.
-- Pestañas: **Conversación** (`/chat`) y **Mis Nudos** (`/nudos`).
-- **Ajustes:** icono de engranaje en la esquina superior derecha del header (→ `/ajustes`).
+- **Navegación desktop:** segmented control en el header con **Conversación** (`/chat`) y **Mis Nudos** (`/nudos`); icono de engranaje → `/ajustes`.
+- **Navegación móvil (<768px):** menú lateral (`PatientMobileDrawer`) accesible desde el icono hamburger. Incluye Conversación, Mis Nudos y Ajustes. Sin barra inferior.
 
-Tras iniciar sesión con Supabase, el usuario entra en `/chat` dentro de este shell.
+Tras iniciar sesión con Supabase, el usuario entra en `/bienvenida` (primera vez) o `/chat`. La bienvenida PWA requiere un solo clic en "Entrar al Chat" (flag en `sessionStorage` + `localStorage` + estado de navegación).
 
 ---
 
@@ -53,13 +53,23 @@ Landing orientada al **terapeuta**.
   - **C – Consecuencia:** alivio a corto plazo, frustración y culpa a largo plazo.
 - **Sección de beneficios:** explica el modelo "paciente ve un bloc de notas / terapeuta recibe PDFs clínicos" + placeholder de "Visualizador de estadísticas".
 
+## `/bienvenida` — Bienvenida PWA (`src/pages/PwaWelcome.tsx`)
+
+Pantalla de onboarding mostrada **solo la primera vez** tras registrarse o iniciar sesión.
+
+- Componente UI: `PwaWelcomeStep` (tabs iOS/Android, pasos de instalación, botón "Entrar al Chat").
+- Textos definidos en [`docs/pwa-install-text.md.md`](./pwa-install-text.md.md).
+- Persistencia: `knotes:pwa-welcome-seen:<userId>` en `localStorage` + `sessionStorage`.
+- Un solo clic en "Entrar al Chat" navega a `/chat` con `welcomeDismissed: true` (evita rebote del guard).
+- Si ya se vio, redirige automáticamente a `/chat`.
+
 ## `/login` — Login (`src/pages/Login.tsx`)
 
 Pantalla de acceso con **Supabase Auth**.
 
 - Campo de **correo electrónico** + botón **"Continuar con Magic Link"** (`signInWithOtp`).
 - Botón alternativo **"Continuar con Google"** (`signInWithOAuth`).
-- Si ya hay sesión activa, redirige automáticamente a `/chat`.
+- Si ya hay sesión activa, redirige a `/bienvenida` (primera vez) o `/chat`.
 - Tras el magic link, Supabase detecta la sesión en la URL y redirige al espacio de conversación.
 - Textos traducibles vía `react-i18next` (es/en).
 
@@ -75,11 +85,14 @@ Gestión de cuenta y preferencias del paciente.
 
 ## `/chat` — Chat (`src/pages/Chat.tsx`)
 
-Conversación activa dentro de una **tarjeta cálida** (no pantalla completa aislada).
+Conversación activa dentro de `PatientAppLayout`, con comportamiento responsive:
+
+- **Móvil (<768px):** pantalla fija a `100dvh` estilo app nativa (ChatGPT). El shell oculta su cabecera; el chat incluye hamburger que abre el drawer lateral (Conversación / Nudos / Ajustes). Scroll solo en la zona de mensajes.
+- **Desktop (`md+`):** tarjeta cálida centrada (`max-w-4xl` + `px-4` en el shell), bordes redondeados, pestañas superiores (sin `position: fixed`).
 
 - Conectado a ChatGPT vía `POST /api/chat`.
 - Burbujas IA en crema (`#FFF6F0`), usuario en terracota con gradiente.
-- Input de texto + micrófono (Whisper server-side).
+- Input de texto + micrófono (Whisper server-side). Input a 16px en móvil (anti-zoom iOS).
 - Animación de tecleo a 25 ms/carácter.
 - Flujo por fases TCC (ver [09 · Flujo del chat](./09-flujo-chat.md)).
 
@@ -122,9 +135,20 @@ Vista completa de un nudo.
 ### `PatientAppLayout` (`src/components/patient/PatientAppLayout.tsx`)
 
 - Shell de la zona paciente post-login.
-- Tabs: Conversación | Mis Nudos.
-- Icono de ajustes (engranaje) en el header → `/ajustes`.
-- Sin Navbar/Footer de marketing.
+- **Desktop:** tabs Conversación | Mis Nudos + icono Ajustes en header.
+- **Móvil:** hamburger abre `PatientMobileDrawer` (sin barra inferior).
+- En `/chat` móvil oculta su cabecera; el chat renderiza su propio hamburger.
+- Contenedor `max-w-4xl mx-auto` en desktop; sin padding lateral en móvil para `/chat`.
+
+### `PatientMobileDrawer` (`src/components/patient/PatientMobileDrawer.tsx`)
+
+- Menú lateral deslizante: Conversación, Mis Nudos, Ajustes.
+- Se cierra al navegar, pulsar overlay o Escape.
+
+### `PwaWelcomeRedirect` (`src/components/pwa/PwaWelcomeRedirect.tsx`)
+
+- Guard en `/chat`: si no se vio la bienvenida PWA → `/bienvenida`.
+- Respeta `welcomeDismissed` en el estado de navegación y `hasSeenPwaWelcome`.
 
 ### `ProtectedRoute` (`src/components/auth/ProtectedRoute.tsx`)
 

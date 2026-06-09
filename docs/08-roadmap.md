@@ -1,6 +1,6 @@
 # 08 · Roadmap
 
-Estado y próximos pasos del proyecto. K-Notes está hoy en fase de **prototipo de interfaz**: la UI está construida pero las integraciones de backend aún no están conectadas.
+Estado y próximos pasos del proyecto. K-Notes tiene **UI completa**, chat TCC conectado a ChatGPT, auth Supabase y persistencia parcial en Supabase.
 
 ## Estado actual
 
@@ -10,8 +10,10 @@ Estado y próximos pasos del proyecto. K-Notes está hoy en fase de **prototipo 
 | Landing de profesionales (`/profesionales`) | ✅ Implementada (estática) |
 | Login (`/login`) | ✅ Supabase Auth (Magic Link + Google) |
 | Ajustes (`/ajustes`) | 🟡 UI completa; suscripción placeholder |
-| Chat (`/chat`) | ✅ Conectado a ChatGPT + diseño cálido en PatientAppLayout |
-| Mis Nudos (`/nudos`, `/nudos/:id`) | 🟡 UI con datos mock, filtros 7d/30d, detalle A-B-C |
+| Bienvenida PWA (`/bienvenida`) | ✅ Guía instalación iOS/Android + flujo 1ª visita |
+| Chat (`/chat`) | ✅ ChatGPT + UX móvil nativa (100dvh) + tarjeta centrada desktop |
+| Mis Nudos (`/nudos`, `/nudos/:id`) | 🟡 Supabase + filtros; A-B-C automático pendiente |
+| Navegación móvil (drawer) | ✅ PatientMobileDrawer sustituye barra inferior |
 | Exportación PDF (paciente) | ✅ Exportación masiva en `/nudos` (semana/mes) vía `POST /api/export` |
 | Sistema de diseño | ✅ Tokens base en Tailwind 4 |
 | Integración IA (ChatGPT) | ✅ Chat conversacional TCC (`POST /api/chat`) |
@@ -21,7 +23,7 @@ Estado y próximos pasos del proyecto. K-Notes está hoy en fase de **prototipo 
 | Persistencia de datos | 🟡 profiles, chat_sessions y nudos en Supabase; A-B-C automático pendiente |
 | Análisis funcional A-B-C automático | ❌ Pendiente |
 | Exportación a PDF | ✅ Generación server-side con pdfkit (informe A-B-C consolidado) |
-| PWA | ❌ Pendiente (mencionado, sin manifest/service worker) |
+| PWA | 🟡 Pantalla bienvenida e instrucciones de instalación; manifest/service worker pendientes |
 | Backend / API (Express) | ✅ `server/index.ts` — chat + export + health |
 
 Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
@@ -50,6 +52,8 @@ Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
 - ~~Activar exportación **PDF masiva** en `/nudos` (generación server-side del informe A-B-C)~~ ✅
 
 ### 5. PWA y móvil
+- ~~Pantalla de bienvenida con guía de instalación (`/bienvenida`)~~ ✅
+- ~~UX móvil nativa del chat (fullscreen, drawer, anti-zoom iOS)~~ ✅
 - Añadir `manifest.json` y service worker.
 - Verificar la experiencia instalable y offline.
 

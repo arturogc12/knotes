@@ -1,7 +1,8 @@
-import { Mic, MicOff, Send } from "lucide-react";
+import { Menu, Mic, MicOff, Send } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { usePatientDrawer } from "../contexts/PatientDrawerContext";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import { saveClosedChatSession } from "../lib/chatSessionsApi";
 import {
@@ -13,6 +14,7 @@ import {
 } from "../lib/chatApi";
 
 const TYPING_SPEED_MS = 25;
+const MOBILE_MEDIA = "(max-width: 767px)";
 
 interface UiMessage {
   id: number;
@@ -22,6 +24,7 @@ interface UiMessage {
 
 export default function Chat() {
   const { user } = useAuth();
+  const { open: openDrawer } = usePatientDrawer();
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [chatState, setChatState] = useState<ChatState>(INITIAL_CHAT_STATE);
@@ -140,6 +143,19 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping, isTranscribing]);
 
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_MEDIA);
+    const syncBodyLock = () => {
+      document.body.classList.toggle("chat-mobile-lock", mq.matches);
+    };
+    syncBodyLock();
+    mq.addEventListener("change", syncBodyLock);
+    return () => {
+      mq.removeEventListener("change", syncBodyLock);
+      document.body.classList.remove("chat-mobile-lock");
+    };
+  }, []);
+
   const handleSend = () => {
     const text = input.trim();
     if (!text || isTyping || isLoading || isTranscribing || chatState.phase === "closed") return;
@@ -160,18 +176,35 @@ export default function Chat() {
   const inputDisabled = isTyping || isLoading || isTranscribing || isClosed;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 md:min-h-[calc(100vh-12rem)]">
-      <div className="flex flex-col flex-1 min-h-0 bg-white/90 border border-[#E8D8CC] rounded-[2rem] shadow-xl shadow-[#C17B5C]/10 overflow-hidden">
-        <div className="shrink-0 px-5 py-4 border-b border-[#E8D8CC]/80 bg-[#FFF6F0]/60">
-          <h1 className="text-center text-sm font-semibold text-[#2D2D2D] tracking-tight">
-            <span className="font-serif italic text-[#C17B5C]">Conversación</span>
-          </h1>
-          <p className="text-center text-[10px] text-[#5D6D66] mt-0.5">
-            Un espacio seguro para desahogarte
-          </p>
-        </div>
+    <div className="max-md:fixed max-md:inset-0 max-md:h-dvh max-md:w-screen max-md:z-30 max-md:overflow-hidden max-md:overscroll-none md:relative md:flex md:flex-col md:flex-1 md:min-h-[calc(100vh-12rem)]">
+      <div className="flex flex-col max-md:h-full md:flex-1 md:min-h-0 max-md:rounded-none max-md:border-0 max-md:shadow-none bg-white/90 md:border md:border-[#E8D8CC] md:rounded-[2rem] md:shadow-xl md:shadow-[#C17B5C]/10 overflow-hidden">
+        <header className="shrink-0 h-14 flex items-center border-b border-[#E8D8CC]/80 bg-[#FFF6F0]/60">
+          <div className="md:hidden w-full h-full flex items-center px-3 gap-3">
+            <button
+              type="button"
+              onClick={openDrawer}
+              aria-label="Abrir menú"
+              className="shrink-0 p-2 rounded-xl text-[#5D6D66] hover:text-[#2D2D2D] hover:bg-white/70 transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="flex-1 text-center text-sm font-semibold text-[#2D2D2D] tracking-tight leading-tight">
+              <span className="font-serif italic text-[#C17B5C]">Conversación</span>
+            </h1>
+            <div className="w-9 shrink-0" aria-hidden="true" />
+          </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-5 flex flex-col gap-4 min-h-[50vh] md:min-h-0">
+          <div className="hidden md:flex w-full flex-col items-center justify-center px-5 py-4">
+            <h1 className="text-center text-sm font-semibold text-[#2D2D2D] tracking-tight">
+              <span className="font-serif italic text-[#C17B5C]">Conversación</span>
+            </h1>
+            <p className="text-center text-[10px] text-[#5D6D66] mt-0.5">
+              Un espacio seguro para desahogarte
+            </p>
+          </div>
+        </header>
+
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll p-4 md:p-5 flex flex-col gap-4">
           {isLoading && messages.length === 0 && (
             <p className="text-center text-sm text-[#5D6D66] animate-pulse py-8">
               Preparando tu espacio seguro...
@@ -215,7 +248,7 @@ export default function Chat() {
           <div ref={bottomRef} />
         </div>
 
-        <div className="shrink-0 bg-[#FFF6F0]/40 border-t border-[#E8D8CC]/80 p-4">
+        <div className="shrink-0 bg-[#FFF6F0]/40 border-t border-[#E8D8CC]/80 p-4 max-md:pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-2">
             <button
               onClick={() => void handleMicClick()}
@@ -245,7 +278,7 @@ export default function Chat() {
                       ? "La conversación ha terminado."
                       : "Escribe o habla lo que piensas..."
                 }
-                className="w-full bg-[#F7F5F2] border border-[#E8D8CC] rounded-full pl-5 pr-12 py-3.5 text-sm focus:outline-none focus:bg-white focus:border-[#C17B5C] focus:ring-1 focus:ring-[#C17B5C] transition-all placeholder-[#5D6D66]/50 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-[#F7F5F2] border border-[#E8D8CC] rounded-full pl-5 pr-12 py-3.5 text-[16px] md:text-sm focus:outline-none focus:bg-white focus:border-[#C17B5C] focus:ring-1 focus:ring-[#C17B5C] transition-all placeholder-[#5D6D66]/50 disabled:opacity-60 disabled:cursor-not-allowed"
               />
               <button
                 onClick={() => void handleSend()}

@@ -49,6 +49,13 @@ Patrón habitual: titulares en `font-medium` con una palabra clave en `font-seri
 - **Animaciones de entrada:** `motion` con `initial={{ opacity: 0, y: 20 }}` → `animate={{ opacity: 1, y: 0 }}`, con `delay` escalonado.
 - **Selección de texto:** `selection:bg-[#C17B5C]/20`.
 
+## Utilidades CSS (`src/index.css`)
+
+| Clase | Uso |
+|-------|-----|
+| `.touch-scroll` | `-webkit-overflow-scrolling: touch` en zona de mensajes del chat. |
+| `body.chat-mobile-lock` | Bloquea scroll del documento en móvil cuando el chat está activo. |
+
 ## Iconografía
 
 Iconos de **lucide-react**:
@@ -56,14 +63,40 @@ Iconos de **lucide-react**:
 - `MessageCircleHeart`, `ShieldCheck` (Home)
 - `Bot`, `FileText`, `Activity`, `ArrowRight` (Professionals)
 - `Mail` (Login)
-- `ArrowLeft`, `Send` (Chat)
-- `BookHeart`, `Menu`, `X` (Navbar)
+- `Menu`, `X` (Navbar marketing + drawer móvil paciente)
+- `Mic`, `Send`, `Menu` (Chat móvil)
+- `Layers`, `MessageCircle`, `Settings` (Drawer paciente)
+- `Share`, `Smartphone`, `Zap`, `Sparkles` (PwaWelcomeStep)
 
 ## Responsividad
 
 - **Mobile-first** con breakpoints `sm` / `md` / `lg`.
 - La Home tiene secciones específicas para móvil (tarjetas de features) y para desktop (barra inferior).
 - El proyecto se describe como **optimizado para PWA y móvil**.
+
+### Chat móvil inmersivo
+
+En `/chat` con viewport `<768px`:
+
+- Pantalla fija a `100dvh` sin scroll del documento (`chat-mobile-lock` en `body`).
+- Tres zonas: cabecera 56px, mensajes con scroll independiente (`touch-scroll`), input fijo abajo.
+- Input a 16px mínimo (anti-zoom iOS). Safe area en el footer.
+- En `md+` se mantiene la tarjeta cálida con bordes `rounded-[2rem]` dentro del shell habitual (sin fullscreen).
+
+### Drawer móvil de paciente
+
+En toda la app logueada con viewport `<768px` (`PatientMobileDrawer`):
+
+- Se abre desde el icono hamburger (en el header del shell o en la cabecera del chat).
+- Enlaces: Conversación, Mis Nudos, Ajustes.
+- Sustituye la barra inferior de pestañas en móvil.
+- En desktop la navegación sigue siendo el segmented control del header.
+
+### Pantalla bienvenida PWA (`/bienvenida`)
+
+- Tarjeta centrada `max-w-lg` con tabs iOS/Android (indicador animado con `layoutId`).
+- Pasos numerados con iconos sutiles; botón CTA terracota `rounded-[2rem]`.
+- Misma paleta y tipografía que el resto de la app.
 
 ## Helper de estilos
 

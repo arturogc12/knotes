@@ -22,3 +22,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  body.chat-mobile-lock {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}

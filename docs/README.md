@@ -16,13 +16,14 @@ Esta carpeta contiene la documentación estructural del proyecto **K-Notes**, or
 | [06 · Sistema de diseño](./06-sistema-diseno.md) | Paleta de colores, tipografías, tokens y patrones visuales. |
 | [07 · Configuración y entorno](./07-configuracion-entorno.md) | Variables de entorno, scripts npm y configuración de build. |
 | [08 · Roadmap](./08-roadmap.md) | Integraciones pendientes y próximos pasos. |
+| [09 · Flujo del chat](./09-flujo-chat.md) | Fases TCC, ritmo de tecleo, layout móvil/desktop y acceso PWA. |
 
 ## Resumen rápido
 
 - **Nombre del producto:** K-Notes
 - **Tipo:** Web app (SPA con React) con orientación PWA/móvil
-- **Stack principal:** React 19 + TypeScript + Vite 6 + Tailwind CSS 4
-- **Estado actual:** Prototipo de UI (landing + login simulado + chat estático)
+- **Stack principal:** React 19 + TypeScript + Vite 6 + Tailwind CSS 4 + Supabase Auth
+- **Estado actual:** UI completa, chat TCC con ChatGPT, auth Supabase, nudos en Supabase, export PDF, pantalla de bienvenida PWA y UX móvil nativa en el chat
 - **Repositorio:** https://github.com/arturogc12/knotes.git
 
 ## Cómo arrancar

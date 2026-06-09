@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { MessageCircleHeart, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import PricingSection from "../components/landing/PricingSection";
 
 export default function Home() {
   return (
@@ -126,6 +127,8 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
+
+      <PricingSection />
 
       {/* Bottom Feature Bar (Desktop) */}
       <footer className="h-32 px-12 border-t border-[#E8D8CC] hidden md:flex items-center justify-between shrink-0 bg-white/30 w-full">

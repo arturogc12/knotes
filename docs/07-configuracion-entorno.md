@@ -50,7 +50,8 @@ En el dashboard de Supabase:
 
 1. **Authentication → URL Configuration:**
    - Site URL: `http://localhost:3000` (y la URL de producción).
-   - Redirect URLs: `http://localhost:3000/login`, `http://localhost:3000/chat` (y equivalentes en producción).
+   - Redirect URLs: `http://localhost:3000/login`, `http://localhost:3000/bienvenida`, `http://localhost:3000/chat` (y equivalentes en producción).
+   - OAuth y magic link redirigen a `/bienvenida` por defecto (`AuthContext.getRedirectUrl`).
 2. **Authentication → Providers:** activa Email (Magic Link) y Google.
 3. El cliente en `src/lib/supabase.ts` guarda la sesión en **sessionStorage** (por pestaña): sobrevive recargas (F5) pero **no** al cerrar la pestaña. Usa `persistSession: true`, `autoRefreshToken: true` y `detectSessionInUrl: true`.
 4. Ejecuta las migraciones en **SQL Editor**:
@@ -108,7 +109,7 @@ El frontend se publica como SPA estática (`dist/`) y el API corre como funcione
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
 
-El archivo [`vercel.json`](../vercel.json) reescribe todas las rutas excepto `/api/*` hacia `index.html`, de modo que `/chat`, `/login`, etc. funcionen al entrar directamente por URL.
+El archivo [`vercel.json`](../vercel.json) reescribe todas las rutas excepto `/api/*` hacia `index.html`, de modo que `/chat`, `/bienvenida`, `/login`, etc. funcionen al entrar directamente por URL.
 
 ### Variables de entorno (Vercel Dashboard)
 

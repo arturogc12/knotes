@@ -144,3 +144,78 @@ Cada pregunta se hace **tras la respuesta del usuario** a la anterior.
 - El audio se envía al servidor y se transcribe con **OpenAI Whisper** (misma cuenta/API que ChatGPT), **no** con el reconocimiento de voz del navegador.
 - La transcripción se envía automáticamente como mensaje del usuario al flujo conversacional.
 - Mientras transcribe o la IA escribe, el input queda bloqueado para evitar solapar turnos.
+
+---
+
+## 6. Acceso al chat (primera sesión)
+
+Tras registrarse o iniciar sesión por primera vez, el usuario pasa por `/bienvenida` (guía de instalación PWA) antes de entrar al chat.
+
+```
+Login / OAuth  →  /bienvenida (solo 1ª vez)  →  /chat
+                      │
+                      └─ "Entrar al Chat" (un solo clic)
+```
+
+- Implementación: `src/pages/PwaWelcome.tsx`, `src/components/pwa/PwaWelcomeStep.tsx`.
+- Persistencia: `localStorage` + `sessionStorage` (`knotes:pwa-welcome-seen:<userId>`).
+- Al pulsar "Entrar al Chat" se navega a `/chat` con estado `welcomeDismissed: true` para evitar rebotes del guard (`PwaWelcomeRedirect`).
+- En visitas posteriores el usuario va directo a `/chat`.
+
+---
+
+## 7. Layout, navegación y UI del chat
+
+Implementación en `src/pages/Chat.tsx` dentro de `PatientAppLayout` (`src/components/patient/PatientAppLayout.tsx`).
+
+### Apariencia visual
+
+| Elemento | Estilo |
+|----------|--------|
+| Burbujas IA | Fondo crema `#FFF6F0`, borde `#F0E4D8`, `rounded-[1.5rem]` |
+| Burbujas usuario | Gradiente terracota `#C17B5C` → `#A86548`, alineadas a la derecha |
+| Cabecera del chat | Fondo `#FFF6F0`, título "Conversación" en serif itálica terracota |
+| Input | Fondo `#F7F5F2`, borde `#E8D8CC`, `rounded-full`; micrófono + enviar |
+
+### Móvil (`<768px`) — pantalla completa
+
+El chat ocupa el 100% del viewport como una app nativa (estilo ChatGPT):
+
+- Contenedor raíz: `position: fixed; inset: 0; height: 100dvh; width: 100vw; overflow: hidden; overscroll-behavior: none`.
+- El `body` recibe la clase `chat-mobile-lock` para bloquear scroll y rebote del documento.
+- `PatientAppLayout` oculta su cabecera en `/chat` y no aplica padding lateral (`max-md:px-0`).
+
+```
+┌─────────────────────────────┐
+│ Header (56px, shrink-0)     │  ← Hamburger → drawer lateral
+├─────────────────────────────┤
+│ Mensajes (flex-1, scroll)   │  ← overflow-y: auto, touch-scroll
+│                             │
+├─────────────────────────────┤
+│ Input (shrink-0)            │  ← safe-area-inset-bottom, font-size 16px
+└─────────────────────────────┘
+```
+
+- Input a **16px** en móvil (anti-zoom iOS Safari).
+- Con `100dvh`, al abrir el teclado el layout flex se contrae: cabecera fija, mensajes con scroll propio, input encima del teclado.
+
+### Desktop (`md+`) — tarjeta centrada
+
+- Tarjeta con `rounded-[2rem]`, borde `#E8D8CC` y sombra suave.
+- Shell completo visible: logo, pestañas superiores (Conversación / Mis Nudos), icono de Ajustes.
+- Contenedor centrado: `px-4` + `max-w-4xl mx-auto` en el shell (mismos márgenes que nudos y ajustes).
+- Sin `position: fixed` ni fullscreen.
+
+### Navegación móvil (drawer lateral)
+
+En toda la app logueada con viewport `<768px`, la barra inferior de pestañas se sustituye por un **menú lateral** (`PatientMobileDrawer`):
+
+| Destino | Ruta |
+|---------|------|
+| Conversación | `/chat` |
+| Mis Nudos | `/nudos` |
+| Ajustes | `/ajustes` |
+
+- Se abre desde el icono hamburger (☰) en la cabecera del shell o en la cabecera del chat.
+- Se cierra al navegar, pulsar el overlay o pulsar Escape.
+- En desktop la navegación sigue siendo el segmented control del header.

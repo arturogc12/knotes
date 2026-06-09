@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { FormEvent } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { hasSeenPwaWelcome } from "../lib/pwaWelcome";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -26,7 +27,8 @@ export default function Login() {
 
   useEffect(() => {
     if (!loading && session) {
-      navigate("/chat", { replace: true });
+      const destination = hasSeenPwaWelcome(session.user.id) ? "/chat" : "/bienvenida";
+      navigate(destination, { replace: true });
     }
   }, [loading, session, navigate]);
 

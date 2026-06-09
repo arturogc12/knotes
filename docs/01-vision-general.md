@@ -13,7 +13,7 @@ Los autorregistros manuales (en papel o Word) son tediosos para el paciente y co
 
 1. El paciente solo conversa con la app como si fuera un bloc de notas seguro.
 2. La IA, "tras bambalinas", extrae y etiqueta Antecedentes, Conductas y Consecuencias.
-3. El terapeuta recibe informes clínicos limpios (con vistas a exportación en PDF).
+3. El terapeuta recibe informes clínicos limpios (con exportación PDF implementada).
 
 ## Propuesta de valor
 
@@ -21,8 +21,8 @@ Los autorregistros manuales (en papel o Word) son tediosos para el paciente y co
 |------------------|-------------------|
 | Desahogo sin fricción ni formularios | Análisis funcional automatizado |
 | Espacio íntimo y confidencial | Informes semanales estructurados (A-B-C) |
-| Experiencia tipo chat antes de dormir | Exportación PDF para sesión (planificado) |
-| Privacidad y cifrado E2E (mensaje de marca) | Optimización del tiempo clínico |
+| Experiencia tipo chat antes de dormir | Exportación PDF para sesión |
+| Instalable como PWA en móvil | Optimización del tiempo clínico |
 
 ## Usuarios objetivo
 
@@ -31,12 +31,15 @@ Los autorregistros manuales (en papel o Word) son tediosos para el paciente y co
 
 ## Estado actual del producto
 
-> El proyecto combina una **UI completa** con un **chat TCC conectado a ChatGPT** (OpenAI server-side). Autenticación, persistencia y generación de PDF siguen pendientes. Ver [08 · Roadmap](./08-roadmap.md).
+> El proyecto combina una **UI completa** con un **chat TCC conectado a ChatGPT**, **autenticación Supabase**, **persistencia de nudos** y **exportación PDF**. Ver [08 · Roadmap](./08-roadmap.md) para lo pendiente.
 
 Elementos ya presentes:
 
 - Landing para pacientes (`/`) y para profesionales (`/profesionales`).
-- Pantalla de login simulado (`/login`) con redirección al chat.
-- Chat conversacional (`/chat`) con flujo por fases TCC y animación de tecleo (ver [09 · Flujo del chat](./09-flujo-chat.md)).
+- Login con Supabase Auth (`/login`): Magic Link + Google OAuth.
+- Pantalla de bienvenida PWA (`/bienvenida`) en el primer acceso, con guía de instalación iOS/Android.
+- Zona paciente post-login: chat (`/chat`), nudos (`/nudos`), ajustes (`/ajustes`).
+- Chat conversacional con flujo por fases TCC, animación de tecleo y UX móvil nativa (ver [09 · Flujo del chat](./09-flujo-chat.md)).
+- Navegación móvil mediante menú lateral (drawer); desktop con pestañas en el header.
 
-Mensajes de marca que anticipan funcionalidades futuras: *CBT-Based Mirroring*, *Cifrado E2E & Supabase Auth*, *Exportación PDF para Sesión* y *Optimizado para PWA & Móvil*.
+Mensajes de marca que anticipan funcionalidades futuras: *CBT-Based Mirroring*, *Cifrado E2E & Supabase Auth* y *Optimizado para PWA & Móvil*.

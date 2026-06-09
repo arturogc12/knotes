@@ -24,7 +24,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getRedirectUrl() {
-  return `${window.location.origin}/chat`;
+  return `${window.location.origin}/bienvenida`;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
