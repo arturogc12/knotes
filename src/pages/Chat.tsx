@@ -6,6 +6,7 @@ import { usePatientDrawer } from "../contexts/PatientDrawerContext";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import { saveClosedChatSession } from "../lib/chatSessionsApi";
 import {
+  fetchClosing,
   fetchWelcome,
   INITIAL_CHAT_STATE,
   sendChatMessage,
@@ -13,7 +14,7 @@ import {
   type ChatState,
 } from "../lib/chatApi";
 
-const TYPING_SPEED_MS = 25;
+const TYPING_SPEED_MS = 15;
 const MOBILE_MEDIA = "(max-width: 767px)";
 
 interface UiMessage {
@@ -67,43 +68,73 @@ export default function Chat() {
       }, TYPING_SPEED_MS);
     });
 
-  const sendMessage = useCallback(async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || chatStateRef.current.phase === "closed") return;
+  const persistClosedSession = useCallback(
+    async (finalHistory: ChatMessage[], closingReply: string) => {
+      if (!user || savedRef.current) return;
+      savedRef.current = true;
+      try {
+        await saveClosedChatSession(user.id, finalHistory, closingReply);
+      } catch (persistErr) {
+        console.error("Error guardando conversación:", persistErr);
+        setError("La conversación terminó, pero no pudimos guardar el nudo.");
+      }
+    },
+    [user],
+  );
 
-    setError(null);
-    setMessages((prev) => [...prev, { id: nextId(), role: "user", text: trimmed }]);
-    setIsTyping(true);
-
-    try {
-      const { reply, state } = await sendChatMessage(
-        historyRef.current,
-        chatStateRef.current,
-        trimmed,
-      );
-      const newHistory: ChatMessage[] = [
-        ...historyRef.current,
-        { role: "user", content: trimmed },
+  const deliverClosingMessage = useCallback(
+    async (history: ChatMessage[], state: ChatState) => {
+      const { reply, state: closedState } = await fetchClosing(history, state);
+      const finalHistory: ChatMessage[] = [
+        ...history,
         { role: "assistant", content: reply },
       ];
-      setHistory(newHistory);
-      setChatState(state);
+      setHistory(finalHistory);
+      setChatState(closedState);
       await typeAiMessage(reply);
 
-      if (state.phase === "closed" && user && !savedRef.current) {
-        savedRef.current = true;
-        try {
-          await saveClosedChatSession(user.id, newHistory, reply);
-        } catch (persistErr) {
-          console.error("Error guardando conversación:", persistErr);
-          setError("La conversación terminó, pero no pudimos guardar el nudo.");
-        }
+      if (closedState.phase === "closed") {
+        await persistClosedSession(finalHistory, reply);
       }
-    } catch (e) {
-      setIsTyping(false);
-      setError(e instanceof Error ? e.message : "Error al enviar el mensaje");
-    }
-  }, [user]);
+    },
+    [persistClosedSession],
+  );
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      const phase = chatStateRef.current.phase;
+      if (!trimmed || phase === "closed" || phase === "closing") return;
+
+      setError(null);
+      setMessages((prev) => [...prev, { id: nextId(), role: "user", text: trimmed }]);
+      setIsTyping(true);
+
+      try {
+        const { reply, state } = await sendChatMessage(
+          historyRef.current,
+          chatStateRef.current,
+          trimmed,
+        );
+        const newHistory: ChatMessage[] = [
+          ...historyRef.current,
+          { role: "user", content: trimmed },
+          { role: "assistant", content: reply },
+        ];
+        setHistory(newHistory);
+        setChatState(state);
+        await typeAiMessage(reply);
+
+        if (state.phase === "closing") {
+          await deliverClosingMessage(newHistory, state);
+        }
+      } catch (e) {
+        setIsTyping(false);
+        setError(e instanceof Error ? e.message : "Error al enviar el mensaje");
+      }
+    },
+    [deliverClosingMessage],
+  );
 
   const handleVoiceTranscript = useCallback(
     (text: string) => {
@@ -158,13 +189,30 @@ export default function Chat() {
 
   const handleSend = () => {
     const text = input.trim();
-    if (!text || isTyping || isLoading || isTranscribing || chatState.phase === "closed") return;
+    if (
+      !text ||
+      isTyping ||
+      isLoading ||
+      isTranscribing ||
+      chatState.phase === "closed" ||
+      chatState.phase === "closing"
+    ) {
+      return;
+    }
     setInput("");
     void sendMessage(text);
   };
 
   const handleMicClick = async () => {
-    if (isTyping || isLoading || isTranscribing || chatState.phase === "closed") return;
+    if (
+      isTyping ||
+      isLoading ||
+      isTranscribing ||
+      chatState.phase === "closed" ||
+      chatState.phase === "closing"
+    ) {
+      return;
+    }
     try {
       await toggleRecording();
     } catch (e) {
@@ -173,7 +221,8 @@ export default function Chat() {
   };
 
   const isClosed = chatState.phase === "closed";
-  const inputDisabled = isTyping || isLoading || isTranscribing || isClosed;
+  const isClosing = chatState.phase === "closing";
+  const inputDisabled = isTyping || isLoading || isTranscribing || isClosed || isClosing;
 
   return (
     <div className="max-md:fixed max-md:inset-0 max-md:h-dvh max-md:w-screen max-md:z-30 max-md:overflow-hidden max-md:overscroll-none md:relative md:flex md:flex-col md:flex-1 md:min-h-[calc(100vh-12rem)]">
@@ -274,9 +323,11 @@ export default function Chat() {
                 placeholder={
                   isRecording
                     ? "Escuchando... pulsa el micrófono para terminar"
-                    : isClosed
-                      ? "La conversación ha terminado."
-                      : "Escribe o habla lo que piensas..."
+                    : isClosing
+                      ? "Preparando el cierre de la conversación..."
+                      : isClosed
+                        ? "La conversación ha terminado."
+                        : "Escribe o habla lo que piensas..."
                 }
                 className="w-full bg-[#F7F5F2] border border-[#E8D8CC] rounded-full pl-5 pr-12 py-3.5 text-[16px] md:text-sm focus:outline-none focus:bg-white focus:border-[#C17B5C] focus:ring-1 focus:ring-[#C17B5C] transition-all placeholder-[#5D6D66]/50 disabled:opacity-60 disabled:cursor-not-allowed"
               />

@@ -9,13 +9,13 @@ Sirve como especificación tanto para la **UI** (animación de tecleo) como para
 ## 1. Ritmo de escritura (animación de tecleo)
 
 - Cada mensaje de la IA aparece con un **efecto máquina de escribir**, carácter a carácter.
-- **Velocidad: ~25 ms por carácter** (≈ 40 caracteres por segundo).
+- **Velocidad: ~15 ms por carácter** (≈ 67 caracteres por segundo).
 - Mientras teclea:
   - Se muestra un cursor o indicador de "escribiendo".
   - El campo de entrada del usuario permanece **deshabilitado** hasta que el mensaje termina de aparecer (evita solapar turnos).
 - Tras terminar de teclear, se habilita de nuevo el input y la IA queda a la espera de la respuesta del usuario.
 
-> Parámetro de referencia: `TYPING_SPEED_MS = 25`.
+> Parámetro de referencia: `TYPING_SPEED_MS = 15` en `src/pages/Chat.tsx`.
 
 ---
 
@@ -125,6 +125,15 @@ Cada pregunta se hace **tras la respuesta del usuario** a la anterior.
 | 3 · Socráticas | IA pregunta | exactamente 3 |
 | 4 · Aclaración | Usuario / IA | máx. 3 intercambios adicionales |
 | 5 · Cierre | IA | 1 mensaje |
+
+### Implementación server-side
+
+Las fases se mapean a `ChatPhase` en `server/types.ts` y avanzan en `server/chat.ts`:
+
+`welcome` → `venting` → `exploration` → `socratic` → `clarification` → `closing` → `closed`
+
+- **Exploración:** solo avanza cuando la IA marca `situationUnderstood: true` (sin tope fijo de turnos).
+- **Cierre (Fase 5):** fase `closing`; el cliente solicita el mensaje automáticamente tras completar la aclaración, igual que la bienvenida inicial.
 
 ---
 

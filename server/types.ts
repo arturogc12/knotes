@@ -4,6 +4,7 @@ export type ChatPhase =
   | "exploration"
   | "socratic"
   | "clarification"
+  | "closing"
   | "closed";
 
 export interface ChatMessage {

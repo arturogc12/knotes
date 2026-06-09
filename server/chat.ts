@@ -24,7 +24,7 @@ function advanceState(
 
     case "exploration":
       next.explorationTurns++;
-      if (situationUnderstood || next.explorationTurns >= 3) {
+      if (situationUnderstood) {
         next.phase = "socratic";
         next.socraticIndex = 0;
       }
@@ -41,8 +41,12 @@ function advanceState(
     case "clarification":
       next.clarificationCount++;
       if (next.clarificationCount >= 3) {
-        next.phase = "closed";
+        next.phase = "closing";
       }
+      break;
+
+    case "closing":
+      next.phase = "closed";
       break;
 
     default:
@@ -75,8 +79,20 @@ export async function handleChat(req: Request, res: Response) {
       return res.json(response);
     }
 
+    // Cierre experto automático (Fase 5, sin mensaje del usuario).
+    if (!userMessage && state.phase === "closing") {
+      const { reply } = await generateChatReply(history, "closing", state);
+      const nextState = advanceState(state, false, false);
+      const response: ChatResponseBody = { reply, state: nextState };
+      return res.json(response);
+    }
+
     if (!userMessage) {
       return res.status(400).json({ error: "Falta el mensaje del usuario" });
+    }
+
+    if (state.phase === "closing") {
+      return res.status(400).json({ error: "La conversación está cerrando" });
     }
 
     if (state.phase === "closed") {

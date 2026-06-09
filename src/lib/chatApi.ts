@@ -4,6 +4,7 @@ export type ChatPhase =
   | "exploration"
   | "socratic"
   | "clarification"
+  | "closing"
   | "closed";
 
 export interface ChatMessage {
@@ -38,6 +39,13 @@ interface ChatApiError {
 
 export async function fetchWelcome(): Promise<ChatApiResponse> {
   return postChat({ history: [], state: INITIAL_CHAT_STATE });
+}
+
+export async function fetchClosing(
+  history: ChatMessage[],
+  state: ChatState,
+): Promise<ChatApiResponse> {
+  return postChat({ history, state });
 }
 
 export async function sendChatMessage(

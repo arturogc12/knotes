@@ -54,7 +54,15 @@ No repitas el tipo de la pregunta anterior.`;
       return `FASE ACTUAL: Aclaración final (${counters.clarificationCount}/3 intercambios).
 Ayúdale a afinar lo trabajado: resuelve dudas, refuerza el pensamiento alternativo que haya emergido.
 Sé socrático y validante, sin sermonear. UNA pregunta o reflexión breve por turno.
-${counters.clarificationCount >= 2 ? "Este es el último intercambio: cierra como terapeuta experto. Recoge brevemente el análisis funcional de la conducta (A-B-C: antecedente, pensamiento/conducta, consecuencia), refuerza su avance sin paternalismo y deja sensación de continuidad." : ""}`;
+NO cierres la conversación aquí; el cierre experto llegará en la siguiente fase.`;
+
+    case "closing":
+      return `FASE ACTUAL: Cierre experto.
+Escribe UN único mensaje de cierre como terapeuta experto en TCC:
+- Recoge brevemente el análisis funcional de la conducta (A-B-C: antecedente, pensamiento/conducta, consecuencia).
+- Refuerza el avance del usuario sin paternalismo.
+- Deja sensación de contención y continuidad.
+No hagas preguntas. No invites a seguir escribiendo.`;
 
     case "closed":
       return `FASE ACTUAL: Conversación cerrada.
