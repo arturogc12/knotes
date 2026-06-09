@@ -8,17 +8,21 @@ Estado y próximos pasos del proyecto. K-Notes está hoy en fase de **prototipo 
 |------|--------|
 | Landing de pacientes (`/`) | ✅ Implementada (estática) |
 | Landing de profesionales (`/profesionales`) | ✅ Implementada (estática) |
-| Login (`/login`) | 🟡 Simulado (redirige a `/chat`, sin auth real) |
-| Chat (`/chat`) | ✅ Conectado a ChatGPT (OpenAI server-side, flujo por fases TCC) |
+| Login (`/login`) | ✅ Supabase Auth (Magic Link + Google) |
+| Ajustes (`/ajustes`) | 🟡 UI completa; suscripción placeholder |
+| Chat (`/chat`) | ✅ Conectado a ChatGPT + diseño cálido en PatientAppLayout |
+| Mis Nudos (`/nudos`, `/nudos/:id`) | 🟡 UI con datos mock, filtros 7d/30d, detalle A-B-C |
+| Exportación PDF (paciente) | ✅ Exportación masiva en `/nudos` (semana/mes) vía `POST /api/export` |
 | Sistema de diseño | ✅ Tokens base en Tailwind 4 |
 | Integración IA (ChatGPT) | ✅ Chat conversacional TCC (`POST /api/chat`) |
 | Extracción A-B-C automática | ❌ Pendiente (post-proceso IA) |
-| Autenticación (Supabase) | ❌ Pendiente (solo mensajes de marca) |
-| Persistencia de datos | ❌ Pendiente |
+| Autenticación (Supabase) | ✅ Cliente + sesión + rutas protegidas + JWT en export PDF |
+| Internacionalización (i18n) | 🟡 Ajustes, Login y navegación (es/en); resto de páginas pendiente |
+| Persistencia de datos | 🟡 profiles, chat_sessions y nudos en Supabase; A-B-C automático pendiente |
 | Análisis funcional A-B-C automático | ❌ Pendiente |
-| Exportación a PDF | ❌ Pendiente |
+| Exportación a PDF | ✅ Generación server-side con pdfkit (informe A-B-C consolidado) |
 | PWA | ❌ Pendiente (mencionado, sin manifest/service worker) |
-| Backend / API (Express) | ✅ `server/index.ts` — chat + health |
+| Backend / API (Express) | ✅ `server/index.ts` — chat + export + health |
 
 Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
 
@@ -30,17 +34,20 @@ Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
 - Extraer el esquema **A-B-C** en un segundo paso (post-proceso o tool call) y persistirlo.
 
 ### 2. Autenticación y sesión
-- Implementar **Supabase Auth** (Magic Link + Google) sustituyendo el `navigate("/chat")` simulado.
-- Configurar `persistSession: true` y proteger la ruta `/chat`.
+- ~~Implementar **Supabase Auth** (Magic Link + Google)~~ ✅
+- ~~Proteger rutas de paciente (`/chat`, `/nudos`, `/ajustes`)~~ ✅
+- Añadir validación JWT en el API server-side.
+- Página de **Ajustes** con gestión de suscripción real (Stripe u otro).
 
-### 3. Persistencia
-- Guardar las conversaciones y los autorregistros A-B-C por usuario.
-- Modelo de datos: paciente ↔ terapeuta ↔ entradas/sesiones.
+### 3. Persistencia y nudos reales
+- Conectar **Mis Nudos** a datos reales: al cerrar un chat, guardar el nudo con A-B-C extraído.
+- Sustituir `src/data/mockNudos.ts` por Supabase (o API propia).
+- Modelo de datos: paciente ↔ terapeuta ↔ entradas/sesiones (nudos).
 
 ### 4. Vista del terapeuta
 - Construir el panel real de "Reporte Semanal" (hoy es una maqueta).
 - Implementar el **visualizador de estadísticas** (placeholder en `/profesionales`).
-- Generación y **exportación a PDF** de los informes clínicos.
+- ~~Activar exportación **PDF masiva** en `/nudos` (generación server-side del informe A-B-C)~~ ✅
 
 ### 5. PWA y móvil
 - Añadir `manifest.json` y service worker.

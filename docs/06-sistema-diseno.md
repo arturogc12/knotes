@@ -1,16 +1,19 @@
 # 06 · Sistema de diseño
 
-El sistema visual se define con **Tailwind CSS 4** mediante el bloque `@theme` en `src/index.css`. La estética es serena, "wellness", con verdes salvia sobre fondo cálido tipo papel.
+El sistema visual se define con **Tailwind CSS 4** mediante el bloque `@theme` en `src/index.css`. La estética es serena, "wellness", con tonos terracota cálidos sobre fondo tipo papel.
 
 ## Paleta de colores
 
 | Token | Valor | Uso |
 |-------|-------|-----|
 | `--color-brand-alabaster` | `#F7F5F2` | Fondo principal (alabastro / papel). |
-| `--color-brand-eucalyptus` | `#8DA399` | Color de marca (verde eucalipto): CTAs, acentos, logo. |
-| `--color-brand-eucalyptus-dark` | `#7D9389` | Hover de botones primarios. |
-| `--color-brand-sage` | `#8CAE99` | Verde salvia secundario. |
-| `--color-brand-sand` | `#E8EEEB` | Fondos suaves, badges, paneles. |
+| `--color-brand-terracotta` | `#C17B5C` | Color de marca (terracota): CTAs, acentos, logo. |
+| `--color-brand-terracotta-dark` | `#A86548` | Hover de botones primarios. |
+| `--color-brand-terracotta-light` | `#D4957A` | Terracota secundario. |
+| `--color-brand-sand` | `#F2E8DE` | Fondos suaves, badges, paneles. |
+| `--color-brand-cream` | `#FFF6F0` | Fondos crema (burbujas IA, cabeceras). |
+| `--color-brand-warm` | `#F0E4D8` | Superficies cálidas. |
+| `--color-brand-border` | `#E8D8CC` | Bordes sutiles. |
 
 ### Colores usados directamente en JSX (valores arbitrarios)
 
@@ -21,8 +24,8 @@ Además de los tokens, el código usa muchos colores "inline" con la sintaxis `b
 | `#2D2D2D` | Texto de titulares (casi negro). |
 | `#4A4A4A` | Texto de cuerpo. |
 | `#5D6D66` | Texto secundario / etiquetas. |
-| `#E8E4DF` | Bordes sutiles. |
-| `#E8EEEB` | Fondos verdes muy claros. |
+| `#E8D8CC` | Bordes sutiles. |
+| `#F2E8DE` | Fondos terracota muy claros. |
 
 > **Recomendación:** centralizar estos valores arbitrarios en tokens del `@theme` para mayor coherencia (ver [08 · Roadmap](./08-roadmap.md)).
 
@@ -35,16 +38,16 @@ Importadas desde Google Fonts en `index.css`:
 | `--font-sans` | **Inter** (300–700) | Texto general, UI, titulares. |
 | `--font-display` / `--font-serif` | **Playfair Display** (incluye itálicas) | Acentos elegantes, palabras destacadas en cursiva, logo "K". |
 
-Patrón habitual: titulares en `font-medium` con una palabra clave en `font-serif italic` color eucalipto.
+Patrón habitual: titulares en `font-medium` con una palabra clave en `font-serif italic` color terracota.
 
 ## Patrones visuales recurrentes
 
 - **Esquinas muy redondeadas:** `rounded-[2rem]`, `rounded-[2.5rem]`, `rounded-full` en botones y tarjetas.
-- **Sombras suaves y tintadas:** `shadow-xl shadow-[#8DA399]/10`.
+- **Sombras suaves y tintadas:** `shadow-xl shadow-[#C17B5C]/10`.
 - **Glassmorphism:** `bg-white/80 backdrop-blur-md` en navbar, header de chat e inputs.
-- **Badges de sección:** texto en mayúsculas, `tracking-[0.2em]`, `text-[10px]`, fondo `#E8EEEB`.
+- **Badges de sección:** texto en mayúsculas, `tracking-[0.2em]`, `text-[10px]`, fondo `#F2E8DE`.
 - **Animaciones de entrada:** `motion` con `initial={{ opacity: 0, y: 20 }}` → `animate={{ opacity: 1, y: 0 }}`, con `delay` escalonado.
-- **Selección de texto:** `selection:bg-[#8DA399]/20`.
+- **Selección de texto:** `selection:bg-[#C17B5C]/20`.
 
 ## Iconografía
 

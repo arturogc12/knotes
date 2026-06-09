@@ -3,10 +3,13 @@
 
 @theme {
   --color-brand-alabaster: #F7F5F2;
-  --color-brand-eucalyptus: #8DA399;
-  --color-brand-eucalyptus-dark: #7D9389;
-  --color-brand-sage: #8CAE99;
-  --color-brand-sand: #E8EEEB;
+  --color-brand-terracotta: #C17B5C;
+  --color-brand-terracotta-dark: #A86548;
+  --color-brand-terracotta-light: #D4957A;
+  --color-brand-sand: #F2E8DE;
+  --color-brand-cream: #FFF6F0;
+  --color-brand-warm: #F0E4D8;
+  --color-brand-border: #E8D8CC;
   
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", ui-serif, Georgia, serif;

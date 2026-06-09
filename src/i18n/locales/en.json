@@ -1,0 +1,54 @@
+{
+  "nav": {
+    "conversation": "Conversation",
+    "nudos": "My Knots",
+    "settings": "Settings"
+  },
+  "login": {
+    "title": "Sign in to your space",
+    "subtitle": "Secure, persistent, and confidential access.",
+    "email": "Email address",
+    "emailPlaceholder": "patient@example.com",
+    "magicLink": "Continue with Magic Link",
+    "divider": "Or you can also",
+    "google": "Continue with Google",
+    "demo": "Try chat (demo)",
+    "footer": "After signing in, you will be redirected to your conversation space.",
+    "checkEmail": "Check your email. We sent you a link to sign in.",
+    "error": "Could not sign in. Please try again."
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "account": {
+      "title": "Account",
+      "email": "Email address"
+    },
+    "subscription": {
+      "title": "Subscription",
+      "planFree": "Free plan",
+      "planPremium": "Premium plan",
+      "description": "Full access to conversations and knots.",
+      "renews": "Renews: {{date}}",
+      "noRenewal": "No renewal scheduled",
+      "manage": "Manage subscription",
+      "comingSoon": "Coming soon"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose the interface language.",
+      "es": "Español",
+      "en": "English"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "privacyPolicy": "Privacy policy",
+      "terms": "Terms of use"
+    },
+    "session": {
+      "title": "Session",
+      "signOut": "Sign out",
+      "signingOut": "Signing out…"
+    }
+  }
+}

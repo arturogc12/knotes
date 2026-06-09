@@ -4,7 +4,7 @@ import { Footer } from "./components/layout/Footer";
 
 function Layout() {
   return (
-    <div className="min-h-screen bg-[#F7F5F2] flex flex-col font-sans selection:bg-[#8DA399]/20">
+    <div className="min-h-screen bg-[#F7F5F2] flex flex-col font-sans selection:bg-[#C17B5C]/20">
       <Navbar />
       <Outlet />
       <Footer />

@@ -1,0 +1,54 @@
+{
+  "nav": {
+    "conversation": "Conversación",
+    "nudos": "Mis Nudos",
+    "settings": "Ajustes"
+  },
+  "login": {
+    "title": "Inicia sesión en tu espacio",
+    "subtitle": "Acceso seguro, persistente y confidencial.",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "paciente@ejemplo.com",
+    "magicLink": "Continuar con Magic Link",
+    "divider": "O también puedes",
+    "google": "Continuar con Google",
+    "demo": "Probar chat (demo)",
+    "footer": "Tras iniciar sesión, serás redirigido a tu espacio de conversación.",
+    "checkEmail": "Revisa tu correo. Te hemos enviado un enlace para iniciar sesión.",
+    "error": "No se pudo iniciar sesión. Inténtalo de nuevo."
+  },
+  "settings": {
+    "title": "Ajustes",
+    "subtitle": "Gestiona tu cuenta y preferencias",
+    "account": {
+      "title": "Cuenta",
+      "email": "Correo electrónico"
+    },
+    "subscription": {
+      "title": "Suscripción",
+      "planFree": "Plan gratuito",
+      "planPremium": "Plan premium",
+      "description": "Acceso completo a conversaciones y nudos.",
+      "renews": "Renovación: {{date}}",
+      "noRenewal": "Sin renovación programada",
+      "manage": "Gestionar suscripción",
+      "comingSoon": "Próximamente"
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Elige el idioma de la interfaz.",
+      "es": "Español",
+      "en": "English"
+    },
+    "privacy": {
+      "title": "Privacidad",
+      "privacyPolicy": "Política de privacidad",
+      "terms": "Términos de uso"
+    },
+    "session": {
+      "title": "Sesión",
+      "signOut": "Cerrar sesión",
+      "signingOut": "Cerrando sesión…"
+    }
+  }
+}

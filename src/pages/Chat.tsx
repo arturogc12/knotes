@@ -1,8 +1,9 @@
-import { ArrowLeft, Mic, MicOff, Send } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Mic, MicOff, Send } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import { useVoiceInput } from "../hooks/useVoiceInput";
+import { saveClosedChatSession } from "../lib/chatSessionsApi";
 import {
   fetchWelcome,
   INITIAL_CHAT_STATE,
@@ -20,6 +21,7 @@ interface UiMessage {
 }
 
 export default function Chat() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [chatState, setChatState] = useState<ChatState>(INITIAL_CHAT_STATE);
@@ -31,6 +33,7 @@ export default function Chat() {
   const idRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedRef = useRef(false);
+  const savedRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const historyRef = useRef(history);
@@ -83,11 +86,21 @@ export default function Chat() {
       setHistory(newHistory);
       setChatState(state);
       await typeAiMessage(reply);
+
+      if (state.phase === "closed" && user && !savedRef.current) {
+        savedRef.current = true;
+        try {
+          await saveClosedChatSession(user.id, newHistory, reply);
+        } catch (persistErr) {
+          console.error("Error guardando conversación:", persistErr);
+          setError("La conversación terminó, pero no pudimos guardar el nudo.");
+        }
+      }
     } catch (e) {
       setIsTyping(false);
       setError(e instanceof Error ? e.message : "Error al enviar el mensaje");
     }
-  }, []);
+  }, [user]);
 
   const handleVoiceTranscript = useCallback(
     (text: string) => {
@@ -147,84 +160,71 @@ export default function Chat() {
   const inputDisabled = isTyping || isLoading || isTranscribing || isClosed;
 
   return (
-    <div className="h-screen bg-[#F7F5F2] flex flex-col font-sans selection:bg-[#8DA399]/20">
-      <header className="bg-white/80 backdrop-blur-md border-b border-[#E8E4DF] flex items-center justify-between px-4 py-4 shrink-0">
-        <Link to="/" className="text-[#4A4A4A] hover:text-[#2D2D2D] transition-colors">
-          <ArrowLeft className="w-6 h-6" />
-        </Link>
-        <div className="flex flex-col items-center">
-          <div className="w-6 h-6 bg-[#8DA399] rounded flex items-center justify-center mb-1">
-            <span className="text-white font-serif italic text-xs font-bold -mt-0.5">K</span>
-          </div>
-          <h1 className="text-sm font-semibold text-[#2D2D2D] tracking-tight">Tu Lienzo</h1>
-        </div>
-        <div className="w-6" />
-      </header>
-
-      <main className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 max-w-3xl mx-auto w-full">
-        <div className="flex justify-center my-6">
-          <span className="text-[10px] font-bold tracking-widest text-[#5D6D66] uppercase bg-white border border-[#E8E4DF] px-4 py-1.5 rounded-full shadow-sm">
-            Hoy, 10:45 AM
-          </span>
+    <div className="flex flex-col flex-1 min-h-0 md:min-h-[calc(100vh-12rem)]">
+      <div className="flex flex-col flex-1 min-h-0 bg-white/90 border border-[#E8D8CC] rounded-[2rem] shadow-xl shadow-[#C17B5C]/10 overflow-hidden">
+        <div className="shrink-0 px-5 py-4 border-b border-[#E8D8CC]/80 bg-[#FFF6F0]/60">
+          <h1 className="text-center text-sm font-semibold text-[#2D2D2D] tracking-tight">
+            <span className="font-serif italic text-[#C17B5C]">Conversación</span>
+          </h1>
+          <p className="text-center text-[10px] text-[#5D6D66] mt-0.5">
+            Un espacio seguro para desahogarte
+          </p>
         </div>
 
-        {isLoading && messages.length === 0 && (
-          <p className="text-center text-sm text-[#5D6D66] animate-pulse">
-            Preparando tu espacio seguro...
-          </p>
-        )}
+        <div className="flex-1 overflow-y-auto p-4 md:p-5 flex flex-col gap-4 min-h-[50vh] md:min-h-0">
+          {isLoading && messages.length === 0 && (
+            <p className="text-center text-sm text-[#5D6D66] animate-pulse py-8">
+              Preparando tu espacio seguro...
+            </p>
+          )}
 
-        {messages.map((m, idx) => {
-          const isLast = idx === messages.length - 1;
-          const showCaret = m.role === "ai" && isLast && isTyping;
-          return (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={
-                m.role === "ai"
-                  ? "bg-white border border-white rounded-[1.5rem] rounded-tl-sm p-5 text-sm text-[#4A4A4A] shadow-sm max-w-[85%] leading-relaxed whitespace-pre-line"
-                  : "bg-[#8DA399] text-white rounded-[1.5rem] rounded-tr-sm p-5 text-sm shadow-md max-w-[85%] self-end leading-relaxed whitespace-pre-line"
-              }
-            >
-              {m.text}
-              {showCaret && (
-                <span className="inline-block w-[2px] h-4 bg-current ml-0.5 align-middle animate-pulse" />
-              )}
-            </motion.div>
-          );
-        })}
+          {messages.map((m, idx) => {
+            const isLast = idx === messages.length - 1;
+            const showCaret = m.role === "ai" && isLast && isTyping;
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={
+                  m.role === "ai"
+                    ? "bg-[#FFF6F0] border border-[#F0E4D8] rounded-[1.5rem] rounded-tl-sm p-4 md:p-5 text-sm text-[#4A4A4A] shadow-sm max-w-[85%] leading-relaxed whitespace-pre-line"
+                    : "bg-gradient-to-br from-[#C17B5C] to-[#A86548] text-white rounded-[1.5rem] rounded-tr-sm p-4 md:p-5 text-sm shadow-md max-w-[85%] self-end leading-relaxed whitespace-pre-line"
+                }
+              >
+                {m.text}
+                {showCaret && (
+                  <span className="inline-block w-[2px] h-4 bg-current ml-0.5 align-middle animate-pulse" />
+                )}
+              </motion.div>
+            );
+          })}
 
-        {isTranscribing && (
-          <p className="text-center text-xs text-[#5D6D66] animate-pulse">
-            Transcribiendo con ChatGPT...
-          </p>
-        )}
+          {isTranscribing && (
+            <p className="text-center text-xs text-[#5D6D66] animate-pulse">
+              Transcribiendo con ChatGPT...
+            </p>
+          )}
 
-        {error && (
-          <p className="text-center text-xs text-red-600/80 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p className="text-center text-xs text-red-600/80 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
+              {error}
+            </p>
+          )}
 
-        <div ref={bottomRef} />
-      </main>
+          <div ref={bottomRef} />
+        </div>
 
-      <footer className="bg-white/90 backdrop-blur-md border-t border-[#E8E4DF] p-4 shrink-0 pb-safe">
-        <div className="max-w-3xl mx-auto">
-          <p className="text-center text-[10px] font-bold tracking-widest uppercase text-[#5D6D66] opacity-60 mb-3 leading-relaxed">
-            La IA de K-Notes estructurará esto en un Autorregistro A-B-C para tu Psicólogo.
-          </p>
-          <div className="relative flex items-center gap-2">
+        <div className="shrink-0 bg-[#FFF6F0]/40 border-t border-[#E8D8CC]/80 p-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => void handleMicClick()}
               disabled={inputDisabled}
               aria-label={isRecording ? "Detener grabación" : "Hablar con el chat"}
-              className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                 isRecording
                   ? "bg-red-500 text-white animate-pulse"
-                  : "bg-[#E8E4DF] text-[#4A4A4A] hover:bg-[#D8D4CF]"
+                  : "bg-[#F2E8DE] text-[#4A4A4A] hover:bg-[#E0D0C4]"
               }`}
             >
               {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -245,20 +245,20 @@ export default function Chat() {
                       ? "La conversación ha terminado."
                       : "Escribe o habla lo que piensas..."
                 }
-                className="w-full bg-[#F7F5F2] border border-[#E8E4DF] rounded-full pl-6 pr-14 py-4 text-sm focus:outline-none focus:bg-white focus:border-[#8DA399] focus:ring-1 focus:ring-[#8DA399] transition-all placeholder-[#5D6D66]/50 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-[#F7F5F2] border border-[#E8D8CC] rounded-full pl-5 pr-12 py-3.5 text-sm focus:outline-none focus:bg-white focus:border-[#C17B5C] focus:ring-1 focus:ring-[#C17B5C] transition-all placeholder-[#5D6D66]/50 disabled:opacity-60 disabled:cursor-not-allowed"
               />
               <button
                 onClick={() => void handleSend()}
                 disabled={inputDisabled || !input.trim()}
                 aria-label="Enviar"
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#8DA399] rounded-full flex items-center justify-center text-white hover:bg-[#7D9389] transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#8DA399]"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 bg-[#C17B5C] rounded-full flex items-center justify-center text-white hover:bg-[#A86548] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4 ml-0.5" />
               </button>
             </div>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@
 
 **K-Notes** es un *"diario de terapia que se escribe solo mientras te desahogas"*. Es un software de auto-reflexión basado en **Terapia Cognitivo-Conductual (TCC)** que sirve a dos públicos al mismo tiempo:
 
-- **Pacientes:** disponen de un chat privado tipo "lienzo de ventilación emocional" donde escriben cómo se sienten, sin formularios ni fricción.
+- **Pacientes:** disponen de un chat privado de conversación emocional donde escriben cómo se sienten, sin formularios ni fricción.
 - **Terapeutas:** reciben de forma automática los autorregistros del paciente estructurados como **análisis funcional A-B-C** (Antecedente – Conducta/Pensamiento – Consecuencia), listos para la sesión.
 
 ## El problema que resuelve

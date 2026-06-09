@@ -39,8 +39,28 @@ Plantilla en `.env.example`. Las variables reales van en `.env.local` (**no vers
 | `OPENAI_MODEL` | Modelo OpenAI (p. ej. `gpt-4o-mini`). Por defecto `gpt-4o-mini`. |
 | `PORT` | Puerto del API Express (por defecto `3099`). Vite hace proxy de `/api` a este puerto. |
 | `APP_URL` | URL donde se hospeda la app. Usada para enlaces auto-referenciales y callbacks OAuth. |
+| `VITE_SUPABASE_URL` | URL del proyecto Supabase. Expuesta al frontend (prefijo `VITE_`). |
+| `VITE_SUPABASE_ANON_KEY` | Clave anónima de Supabase. Expuesta al frontend para Auth. |
 
-> ⚠️ **Seguridad:** `.env.local` contiene secretos y está excluido por `.gitignore` (regla `.env*` con excepción `!.env.example`). Nunca lo subas al repositorio.
+> ⚠️ **Seguridad:** `.env.local` contiene secretos y está excluido por `.gitignore` (regla `.env*` con excepción `!.env.example`). Nunca lo subas al repositorio. La **service role key** de Supabase solo debe usarse server-side, nunca con prefijo `VITE_`.
+
+### Supabase Auth
+
+En el dashboard de Supabase:
+
+1. **Authentication → URL Configuration:**
+   - Site URL: `http://localhost:3000` (y la URL de producción).
+   - Redirect URLs: `http://localhost:3000/login`, `http://localhost:3000/chat` (y equivalentes en producción).
+2. **Authentication → Providers:** activa Email (Magic Link) y Google.
+3. El cliente en `src/lib/supabase.ts` usa `persistSession: true` y `detectSessionInUrl: true`.
+4. Ejecuta la migración `supabase/migrations/001_auth_and_nudos.sql` en **SQL Editor** (tablas `profiles`, `chat_sessions`, `nudos` + RLS).
+
+### Google OAuth (consola externa)
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials** → **OAuth 2.0 Client ID** (Web application).
+2. **Authorized JavaScript origins:** `http://localhost:3000` y tu dominio de producción.
+3. **Authorized redirect URIs:** la URL de callback de Supabase (p. ej. `https://TU_PROYECTO.supabase.co/auth/v1/callback`). La encuentras en Supabase → Authentication → Providers → Google.
+4. Copia **Client ID** y **Client Secret** en Supabase → Authentication → Providers → Google.
 
 ## Configuración de Vite (`vite.config.ts`)
 
@@ -96,6 +116,9 @@ Configúralas en **Project Settings → Environment Variables** (Production y, s
 |----------|-------------|-------------|
 | `OPENAI_API_KEY` | Sí | Clave de OpenAI. Solo server-side. |
 | `OPENAI_MODEL` | No | Modelo (por defecto `gpt-4o-mini`). |
+| `VITE_SUPABASE_URL` | Sí (si usas auth) | URL del proyecto Supabase. |
+| `VITE_SUPABASE_ANON_KEY` | Sí (si usas auth) | Clave anónima de Supabase. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Sí (export PDF) | Clave service role. Solo server-side. |
 
 No subas `.env.local` al repositorio; en Vercel las variables se inyectan en `process.env` automáticamente.
 
