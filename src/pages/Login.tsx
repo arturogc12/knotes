@@ -1,11 +1,11 @@
 import { motion } from "motion/react";
-import { Mail } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { FormEvent } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { hasSeenPwaWelcome } from "../lib/pwaWelcome";
+import { getPostAuthDestination } from "../lib/authRoutes";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -27,8 +27,7 @@ export default function Login() {
 
   useEffect(() => {
     if (!loading && session) {
-      const destination = hasSeenPwaWelcome(session.user.id) ? "/chat" : "/bienvenida";
-      navigate(destination, { replace: true });
+      navigate(getPostAuthDestination(session.user.id), { replace: true });
     }
   }, [loading, session, navigate]);
 
@@ -62,7 +61,7 @@ export default function Login() {
     }
   };
 
-  if (loading) {
+  if (loading || session) {
     return (
       <div className="min-h-screen bg-[#F7F5F2] flex items-center justify-center font-sans">
         <div className="w-10 h-10 bg-[#C17B5C] rounded-xl flex items-center justify-center animate-pulse">
@@ -73,7 +72,16 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F2] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans selection:bg-[#C17B5C]/20">
+    <div className="min-h-screen bg-[#F7F5F2] flex flex-col font-sans selection:bg-[#C17B5C]/20">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-2 text-sm text-[#5D6D66] hover:text-[#2D2D2D] transition-colors px-4 pt-6 sm:px-8"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        {t("login.backHome")}
+      </Link>
+
+      <div className="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -190,6 +198,7 @@ export default function Login() {
           </form>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }

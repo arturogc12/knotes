@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./App.tsx";
 import { PatientAppLayout } from "./components/patient/PatientAppLayout.tsx";
+import { AuthCallbackHandler } from "./components/auth/AuthCallbackHandler.tsx";
+import { LoggedInAppRedirect } from "./components/auth/LoggedInAppRedirect.tsx";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import Home from "./pages/Home.tsx";
@@ -21,6 +23,8 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
       <BrowserRouter>
+        <AuthCallbackHandler />
+        <LoggedInAppRedirect />
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />

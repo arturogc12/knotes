@@ -94,8 +94,10 @@ En toda la app logueada con viewport `<768px` (`PatientMobileDrawer`):
 
 ### Pantalla bienvenida PWA (`/bienvenida`)
 
-- Tarjeta centrada `max-w-lg` con tabs iOS/Android (indicador animado con `layoutId`).
-- Pasos numerados con iconos sutiles; botón CTA terracota `rounded-[2rem]`.
+- Badge "Instala K-Notes" + título y subtítulo centrados.
+- **CTA principal arriba:** botón "Entrar al Chat" terracota `rounded-[2rem]`.
+- Bloque opcional "¿Quieres acceso directo?" debajo del CTA.
+- Tabs iOS/Android (indicador animado con `layoutId`) y pasos numerados con iconos sutiles.
 - Misma paleta y tipografía que el resto de la app.
 
 ## Helper de estilos

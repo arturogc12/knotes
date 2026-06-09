@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { Navigate, useNavigate } from "react-router-dom";
 import PwaWelcomeStep from "../components/pwa/PwaWelcomeStep";
 import { useAuth } from "../contexts/AuthContext";
-import { hasSeenPwaWelcome, markPwaWelcomeSeen } from "../lib/pwaWelcome";
+import { hasSeenPwaWelcome, isMobileDevice, markPwaWelcomeSeen } from "../lib/pwaWelcome";
 
 export default function PwaWelcome() {
   const { user, loading } = useAuth();
@@ -20,6 +20,10 @@ export default function PwaWelcome() {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (!isMobileDevice()) {
+    return <Navigate to="/chat" replace />;
   }
 
   if (hasSeenPwaWelcome(user.id)) {

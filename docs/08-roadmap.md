@@ -23,7 +23,7 @@ Estado y próximos pasos del proyecto. K-Notes tiene **UI completa**, chat TCC c
 | Persistencia de datos | 🟡 profiles, chat_sessions y nudos en Supabase; A-B-C automático pendiente |
 | Análisis funcional A-B-C automático | ❌ Pendiente |
 | Exportación a PDF | ✅ Generación server-side con pdfkit (informe A-B-C consolidado) |
-| PWA | 🟡 Pantalla bienvenida e instrucciones de instalación; manifest/service worker pendientes |
+| PWA | 🟡 Manifest (`start_url: /chat`) e instrucciones de instalación; service worker y offline pendientes |
 | Backend / API (Express) | ✅ `server/index.ts` — chat + export + health |
 
 Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
@@ -43,7 +43,7 @@ Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
 
 ### 3. Persistencia y nudos reales
 - Conectar **Mis Nudos** a datos reales: al cerrar un chat, guardar el nudo con A-B-C extraído.
-- Sustituir `src/data/mockNudos.ts` por Supabase (o API propia).
+- Completar migración de `src/data/mockNudos.ts` (nudos ya en Supabase; queda `formatRelativeDate` u otros helpers).
 - Modelo de datos: paciente ↔ terapeuta ↔ entradas/sesiones (nudos).
 
 ### 4. Vista del terapeuta
@@ -54,8 +54,8 @@ Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
 ### 5. PWA y móvil
 - ~~Pantalla de bienvenida con guía de instalación (`/bienvenida`)~~ ✅
 - ~~UX móvil nativa del chat (fullscreen, drawer, anti-zoom iOS)~~ ✅
-- Añadir `manifest.json` y service worker.
-- Verificar la experiencia instalable y offline.
+- ~~Manifest con `start_url: /chat` e iconos~~ ✅
+- Añadir service worker y verificar experiencia offline.
 
 ### 6. Backend
 - Definir si Express se usará como API propia o si todo irá vía Supabase + funciones serverless.
@@ -64,7 +64,6 @@ Leyenda: ✅ hecho · 🟡 parcial/maqueta · ❌ pendiente
 
 - **Tokens de color:** centralizar los muchos valores `bg-[#...]` arbitrarios en el `@theme` de Tailwind para coherencia.
 - **Adopción de `cn()`:** el helper existe pero apenas se usa; conviene aplicarlo donde haya clases condicionales.
-- **Metadatos del HTML:** `index.html` aún tiene el título por defecto *"My Google AI Studio App"*; actualizar a K-Notes (título, favicon, meta description, lang `es`).
-- **README raíz:** el `README.md` de la raíz es el genérico de AI Studio; conviene reemplazarlo por uno propio de K-Notes que enlace a esta carpeta `docs/`.
+- ~~**Metadatos del HTML:** título K-Notes, lang `es`, manifest y meta PWA en `index.html`~~ ✅
 - **Script `clean`:** usa `rm -rf` (no portable a Windows/PowerShell).
 - **Enlaces de Footer:** "Privacidad" y "Términos" apuntan a `#`.

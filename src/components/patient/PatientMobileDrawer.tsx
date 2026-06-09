@@ -22,7 +22,7 @@ export function PatientMobileDrawer() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    close();
+    close({ skipHistory: true });
   }, [pathname, close]);
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export function PatientMobileDrawer() {
                   <Link
                     key={to}
                     to={to}
-                    onClick={close}
+                    onClick={() => close({ skipHistory: true })}
                     className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium transition-all ${
                       active
                         ? "bg-[#C17B5C] text-white shadow-sm"

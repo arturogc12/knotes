@@ -5,6 +5,7 @@
     "settings": "Settings"
   },
   "login": {
+    "backHome": "Back to home",
     "title": "Sign in to your space",
     "subtitle": "Secure, persistent, and confidential access.",
     "email": "Email address",

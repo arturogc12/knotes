@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { hasSeenPwaWelcome } from "../../lib/pwaWelcome";
+import { shouldShowPwaWelcome } from "../../lib/pwaWelcome";
 import type { ReactNode } from "react";
 
 type WelcomeLocationState = {
@@ -30,7 +30,7 @@ export function PwaWelcomeRedirect({ children }: { children: ReactNode }) {
     );
   }
 
-  if (user && !welcomeDismissed && !hasSeenPwaWelcome(user.id)) {
+  if (user && !welcomeDismissed && shouldShowPwaWelcome(user.id)) {
     return <Navigate to="/bienvenida" replace />;
   }
 

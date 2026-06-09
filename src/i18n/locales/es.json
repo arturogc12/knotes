@@ -5,6 +5,7 @@
     "settings": "Ajustes"
   },
   "login": {
+    "backHome": "Volver al inicio",
     "title": "Inicia sesión en tu espacio",
     "subtitle": "Acceso seguro, persistente y confidencial.",
     "email": "Correo electrónico",

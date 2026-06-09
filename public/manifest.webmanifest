@@ -1,0 +1,25 @@
+{
+  "name": "K-Notes",
+  "short_name": "K-Notes",
+  "description": "El diario de terapia que se escribe solo mientras te desahogas.",
+  "start_url": "/chat",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#C17B5C",
+  "background_color": "#F7F5F2",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

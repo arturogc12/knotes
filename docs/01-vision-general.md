@@ -37,7 +37,8 @@ Elementos ya presentes:
 
 - Landing para pacientes (`/`) y para profesionales (`/profesionales`).
 - Login con Supabase Auth (`/login`): Magic Link + Google OAuth.
-- Pantalla de bienvenida PWA (`/bienvenida`) en el primer acceso, con guía de instalación iOS/Android.
+- Pantalla de bienvenida PWA (`/bienvenida`) en el **primer acceso móvil**, con guía opcional de instalación iOS/Android (desktop va directo a `/chat`).
+- Acceso directo PWA con `start_url: /chat` para abrir la conversación al instante (estilo ChatGPT).
 - Zona paciente post-login: chat (`/chat`), nudos (`/nudos`), ajustes (`/ajustes`).
 - Chat conversacional con flujo por fases TCC, animación de tecleo y UX móvil nativa (ver [09 · Flujo del chat](./09-flujo-chat.md)).
 - Navegación móvil mediante menú lateral (drawer); desktop con pestañas en el header.

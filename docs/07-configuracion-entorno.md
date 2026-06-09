@@ -51,7 +51,7 @@ En el dashboard de Supabase:
 1. **Authentication → URL Configuration:**
    - Site URL: `http://localhost:3000` (y la URL de producción).
    - Redirect URLs: `http://localhost:3000/login`, `http://localhost:3000/bienvenida`, `http://localhost:3000/chat` (y equivalentes en producción).
-   - OAuth y magic link redirigen a `/bienvenida` por defecto (`AuthContext.getRedirectUrl`).
+   - OAuth y magic link aterrizan en `/bienvenida` (`AuthContext.getRedirectUrl`); la app reenvía a `/chat` en desktop o tras ver la guía móvil (`getPostAuthDestination`).
 2. **Authentication → Providers:** activa Email (Magic Link) y Google.
 3. El cliente en `src/lib/supabase.ts` guarda la sesión en **sessionStorage** (por pestaña): sobrevive recargas (F5) pero **no** al cerrar la pestaña. Usa `persistSession: true`, `autoRefreshToken: true` y `detectSessionInUrl: true`.
 4. Ejecuta las migraciones en **SQL Editor**:
@@ -137,6 +137,7 @@ No subas `.env.local` al repositorio; en Vercel las variables se inyectan en `pr
 
 1. Abre `https://tu-app.vercel.app/chat` — debe cargar la pantalla de chat (sin 404).
 2. Abre `https://tu-app.vercel.app/api/health` — debe devolver `{ "ok": true }`.
-3. En `/login`, pulsa **Probar chat (demo)** o envía un mensaje en el chat.
+3. En `/login`, inicia sesión con Magic Link o Google y verifica que llegas a `/chat` (o `/bienvenida` en móvil 1ª vez). Envía un mensaje en el chat.
+4. En móvil, prueba el acceso directo PWA: entra al chat, instala y confirma que el icono abre `/chat`.
 
 > **Límite de voz en Vercel:** `/api/transcribe` acepta bodies de hasta ~4 MB (audio en base64). Grabaciones largas pueden fallar; el chat por texto no tiene esta limitación.

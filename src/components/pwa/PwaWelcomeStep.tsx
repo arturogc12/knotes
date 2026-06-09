@@ -7,7 +7,7 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { detectDefaultPlatform, type PwaPlatform } from "../../lib/pwaWelcome";
 
 interface PwaWelcomeStepProps {
@@ -21,7 +21,7 @@ interface InstallStep {
 
 const IOS_STEPS: InstallStep[] = [
   {
-    text: 'Abre esta web en **Safari** y toca el botón **Compartir** (el icono del cuadrado con la flecha hacia arriba en la barra inferior).',
+    text: 'Pulsa **"Entrar al Chat"** arriba y, una vez dentro del chat, toca **Compartir** en Safari (el icono del cuadrado con la flecha hacia arriba en la barra inferior).',
     icon: Share,
   },
   {
@@ -29,14 +29,14 @@ const IOS_STEPS: InstallStep[] = [
     icon: Smartphone,
   },
   {
-    text: 'Toca **"Añadir"** en la esquina superior derecha. ¡Listo! Ya la tienes junto a tus otras apps.',
+    text: 'Toca **"Añadir"** en la esquina superior derecha. El acceso directo abrirá el chat al instante.',
     icon: Check,
   },
 ];
 
 const ANDROID_STEPS: InstallStep[] = [
   {
-    text: 'Abre esta web en **Chrome** y toca los **tres puntos** de la esquina superior derecha.',
+    text: 'Pulsa **"Entrar al Chat"** arriba y, una vez dentro del chat, abre el menú de **Chrome** (tres puntos en la esquina superior derecha).',
     icon: MoreVertical,
   },
   {
@@ -44,7 +44,7 @@ const ANDROID_STEPS: InstallStep[] = [
     icon: Smartphone,
   },
   {
-    text: 'Confirma tocando **"Instalar"** y el icono aparecerá automáticamente en tu móvil.',
+    text: 'Confirma tocando **"Instalar"**. El icono abrirá el chat directamente gracias al acceso directo.',
     icon: Check,
   },
 ];
@@ -119,13 +119,14 @@ function PlatformSteps({ platform }: { platform: PwaPlatform }) {
       className="space-y-3"
     >
       {steps.map((step, index) => (
-        <StepCard
-          key={`${platform}-${index}`}
-          number={index + 1}
-          text={step.text}
-          icon={step.icon}
-          delay={index * 0.08}
-        />
+        <Fragment key={`${platform}-${index}`}>
+          <StepCard
+            number={index + 1}
+            text={step.text}
+            icon={step.icon}
+            delay={index * 0.08}
+          />
+        </Fragment>
       ))}
     </motion.ul>
   );
@@ -151,9 +152,8 @@ export default function PwaWelcomeStep({ onContinue }: PwaWelcomeStepProps) {
           <span className="font-serif italic text-[#C17B5C]">bolsillo</span>
         </h1>
         <p className="mt-4 text-base md:text-lg text-[#5D6D66] leading-relaxed max-w-lg mx-auto">
-          Instala la aplicación en tu pantalla de inicio para acceder al chat al instante, a
-          pantalla completa y con una experiencia nativa impecable. Sin descargar nada de tiendas
-          de apps.
+          Entra al chat ahora y, si quieres, crea un acceso directo en tu pantalla de inicio para
+          abrirlo al instante, a pantalla completa y con una experiencia nativa impecable.
         </p>
       </motion.header>
 
@@ -161,6 +161,33 @@ export default function PwaWelcomeStep({ onContinue }: PwaWelcomeStepProps) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full bg-[#C17B5C] text-white px-8 py-4 rounded-[2rem] text-base font-semibold shadow-xl shadow-[#C17B5C]/15 hover:bg-[#A86548] hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C17B5C]"
+        >
+          Entrar al Chat
+        </button>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="text-center"
+      >
+        <p className="text-sm font-semibold text-[#2D2D2D]">¿Quieres acceso directo?</p>
+        <p className="mt-1 text-sm text-[#5D6D66] leading-relaxed max-w-md mx-auto">
+          Opcional: sigue estos pasos <strong className="font-semibold text-[#2D2D2D]">después</strong> de
+          entrar al chat para que el icono abra la conversación directamente.
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
       >
         <div className="relative flex p-1 bg-white/70 backdrop-blur-md border border-[#E8D8CC] rounded-full shadow-sm max-w-sm mx-auto">
           {TABS.map(({ id, label }) => {
@@ -205,21 +232,6 @@ export default function PwaWelcomeStep({ onContinue }: PwaWelcomeStepProps) {
           <strong className="font-semibold text-[#2D2D2D]">Instalación instantánea:</strong>{" "}
           Ocupa menos de 1 MB, no consume almacenamiento y se actualiza automáticamente.
         </p>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.35 }}
-        className="pt-2"
-      >
-        <button
-          type="button"
-          onClick={onContinue}
-          className="w-full bg-[#C17B5C] text-white px-8 py-4 rounded-[2rem] text-base font-semibold shadow-xl shadow-[#C17B5C]/15 hover:bg-[#A86548] hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C17B5C]"
-        >
-          Entrar al Chat
-        </button>
       </motion.div>
     </div>
   );

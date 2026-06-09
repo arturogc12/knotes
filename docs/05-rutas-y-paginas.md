@@ -7,7 +7,7 @@
 | `/` | `Home` | ✅ (Navbar + Footer) | Landing para pacientes. |
 | `/profesionales` | `Professionals` | ✅ (Navbar + Footer) | Landing para terapeutas. |
 | `/login` | `Login` | ❌ Pantalla completa | Acceso con Supabase Auth (Magic Link + Google). |
-| `/bienvenida` | `PwaWelcome` | ❌ Pantalla completa | Guía instalación PWA (solo 1ª vez). **Ruta protegida.** |
+| `/bienvenida` | `PwaWelcome` | ❌ Pantalla completa | Guía instalación PWA (móvil, solo 1ª vez). **Ruta protegida.** |
 | `/chat` | `Chat` + `PwaWelcomeRedirect` | ✅ (PatientAppLayout) | Conversación activa con K-Notes. **Ruta protegida.** |
 | `/nudos` | `Nudos` | ✅ (PatientAppLayout) | Historial de nudos (Supabase). **Ruta protegida.** |
 | `/nudos/:id` | `NudoDetail` | ✅ (PatientAppLayout) | Detalle A-B-C de un nudo. **Ruta protegida.** |
@@ -26,7 +26,13 @@ Layout post-login en `src/components/patient/PatientAppLayout.tsx`:
 - **Navegación desktop:** segmented control en el header con **Conversación** (`/chat`) y **Mis Nudos** (`/nudos`); icono de engranaje → `/ajustes`.
 - **Navegación móvil (<768px):** menú lateral (`PatientMobileDrawer`) accesible desde el icono hamburger. Incluye Conversación, Mis Nudos y Ajustes. Sin barra inferior.
 
-Tras iniciar sesión con Supabase, el usuario entra en `/bienvenida` (primera vez) o `/chat`. La bienvenida PWA requiere un solo clic en "Entrar al Chat" (flag en `sessionStorage` + `localStorage` + estado de navegación).
+Tras iniciar sesión con Supabase, el destino lo define `getPostAuthDestination()` en `src/lib/authRoutes.ts`:
+
+- **Desktop:** `/chat` directamente.
+- **Móvil 1ª vez:** `/bienvenida` → un clic en "Entrar al Chat" → `/chat` (flag en `sessionStorage` + `localStorage` + estado `welcomeDismissed`).
+- **Móvil visitas posteriores:** `/chat`.
+
+El acceso directo PWA (`manifest.webmanifest`, `start_url: /chat`) abre la conversación al instante.
 
 ---
 
@@ -55,21 +61,24 @@ Landing orientada al **terapeuta**.
 
 ## `/bienvenida` — Bienvenida PWA (`src/pages/PwaWelcome.tsx`)
 
-Pantalla de onboarding mostrada **solo la primera vez** tras registrarse o iniciar sesión.
+Pantalla de onboarding mostrada **solo en móvil y la primera vez** tras registrarse o iniciar sesión.
 
-- Componente UI: `PwaWelcomeStep` (tabs iOS/Android, pasos de instalación, botón "Entrar al Chat").
-- Textos definidos en [`docs/pwa-install-text.md.md`](./pwa-install-text.md.md).
+- Componente UI: `PwaWelcomeStep` — CTA "Entrar al Chat" primero; bloque opcional "¿Quieres acceso directo?" con tabs iOS/Android.
+- Textos definidos en [`docs/pwa-install-text.md`](./pwa-install-text.md).
 - Persistencia: `knotes:pwa-welcome-seen:<userId>` en `localStorage` + `sessionStorage`.
 - Un solo clic en "Entrar al Chat" navega a `/chat` con `welcomeDismissed: true` (evita rebote del guard).
-- Si ya se vio, redirige automáticamente a `/chat`.
+- **Desktop:** redirige automáticamente a `/chat` (`isMobileDevice()`).
+- Si ya se vio la guía, redirige automáticamente a `/chat`.
+- Los pasos de instalación indican instalar **desde el chat** para que el icono abra `/chat` (iOS guarda la URL actual; Android usa `start_url` del manifest).
 
 ## `/login` — Login (`src/pages/Login.tsx`)
 
 Pantalla de acceso con **Supabase Auth**.
 
+- Enlace **"Volver al inicio"** (esquina superior izquierda) → `/`.
 - Campo de **correo electrónico** + botón **"Continuar con Magic Link"** (`signInWithOtp`).
 - Botón alternativo **"Continuar con Google"** (`signInWithOAuth`).
-- Si ya hay sesión activa, redirige a `/bienvenida` (primera vez) o `/chat`.
+- Si ya hay sesión activa, redirige vía `getPostAuthDestination()` (`/bienvenida` en móvil 1ª vez, `/chat` en el resto).
 - Tras el magic link, Supabase detecta la sesión en la URL y redirige al espacio de conversación.
 - Textos traducibles vía `react-i18next` (es/en).
 
@@ -147,10 +156,39 @@ Vista completa de un nudo.
 
 ### `PwaWelcomeRedirect` (`src/components/pwa/PwaWelcomeRedirect.tsx`)
 
-- Guard en `/chat`: si no se vio la bienvenida PWA → `/bienvenida`.
+- Guard en `/chat`: si móvil y no se vio la bienvenida PWA → `/bienvenida`.
 - Respeta `welcomeDismissed` en el estado de navegación y `hasSeenPwaWelcome`.
 
 ### `ProtectedRoute` (`src/components/auth/ProtectedRoute.tsx`)
 
 - Guard de autenticación para rutas de paciente.
 - Sin sesión activa → redirige a `/login`.
+
+---
+
+## Navegación atrás (sesión iniciada)
+
+### Política
+
+Con sesión activa, el usuario **no sale del área logueada** al pulsar Atrás en rutas de marketing o login. Si el historial devuelve a `/`, `/login` o `/profesionales`, se redirige automáticamente a `/chat` (o `/bienvenida` si aún no vio la guía PWA en móvil).
+
+Entre pantallas del shell paciente (`/chat`, `/nudos`, `/ajustes`, `/nudos/:id`), Atrás funciona con normalidad.
+
+### Implementación
+
+| Componente | Archivo | Comportamiento |
+|------------|---------|----------------|
+| `LoggedInAppRedirect` | `src/components/auth/LoggedInAppRedirect.tsx` | Guard global montado en `main.tsx`. Redirige rutas públicas con sesión activa. En la primera visita a una ruta paciente, hace `replace` para higiene del historial (`sessionStorage`: `knotes:app-stack-rooted`). |
+| `getPostAuthDestination` | `src/lib/authRoutes.ts` | Destino post-login compartido (`/bienvenida` o `/chat`). |
+| `Login` | `src/pages/Login.tsx` | Si hay sesión, muestra spinner (sin flash del formulario) mientras redirige. |
+| `AnimatedPatientOutlet` | `src/components/patient/PatientAppLayout.tsx` | Crossfade suave (150 ms) entre pestañas; 100 ms en navegación `POP` (atrás). |
+| `PatientDrawerContext` | `src/contexts/PatientDrawerContext.tsx` | Al abrir el drawer móvil, `pushState` en el historial. El primer Atrás cierra el menú sin cambiar de ruta. |
+
+### Flujo típico
+
+```
+/chat  →  /nudos  →  Atrás  →  /chat     (crossfade, OK)
+/chat  →  Atrás  →  /  →  redirect  →  /chat   (no se queda en marketing)
+Drawer abierto  →  Atrás  →  drawer cerrado   (misma ruta)
+Cerrar sesión  →  /login  →  Atrás  →  no re-entra a rutas protegidas (replace)
+```

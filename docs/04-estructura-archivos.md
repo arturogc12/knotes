@@ -5,6 +5,11 @@
 ```
 knotes+/
 ├── index.html
+├── public/
+│   ├── manifest.webmanifest    # PWA: start_url /chat, iconos
+│   ├── icon.svg
+│   ├── icon-192.png
+│   └── icon-512.png
 ├── package.json
 ├── vite.config.ts
 ├── tsconfig.json
@@ -33,6 +38,7 @@ knotes+/
     ├── components/
     │   ├── auth/
     │   │   ├── AuthCallbackHandler.tsx
+    │   │   ├── LoggedInAppRedirect.tsx
     │   │   └── ProtectedRoute.tsx
     │   ├── layout/
     │   │   ├── Navbar.tsx
@@ -61,7 +67,8 @@ knotes+/
     │   ├── exportApi.ts
     │   ├── nudosApi.ts
     │   ├── profilesApi.ts
-    │   ├── pwaWelcome.ts       # hasSeen / markSeen / detectDefaultPlatform
+    │   ├── authRoutes.ts       # getPostAuthDestination, rutas marketing
+    │   ├── pwaWelcome.ts       # hasSeen / markSeen / isMobileDevice / detectDefaultPlatform
     │   ├── supabase.ts
     │   ├── transcribeApi.ts
     │   └── utils.ts
@@ -86,7 +93,7 @@ knotes+/
 | `Home.tsx` | `/` | Landing pacientes, pricing, preview chat. |
 | `Professionals.tsx` | `/profesionales` | Landing terapeutas, mockup informe A-B-C. |
 | `Login.tsx` | `/login` | Supabase Auth (Magic Link + Google). |
-| `PwaWelcome.tsx` | `/bienvenida` | Pantalla bienvenida PWA (1ª vez). |
+| `PwaWelcome.tsx` | `/bienvenida` | Pantalla bienvenida PWA (móvil, 1ª vez; desktop redirige a `/chat`). |
 | `Chat.tsx` | `/chat` | Conversación TCC; fullscreen móvil, tarjeta desktop. |
 | `Nudos.tsx` | `/nudos` | Historial de nudos + export PDF. |
 | `NudoDetail.tsx` | `/nudos/:id` | Detalle A-B-C de un nudo. |
@@ -103,13 +110,15 @@ knotes+/
 
 | Componente | Responsabilidad |
 |------------|-----------------|
-| `PwaWelcomeStep.tsx` | UI de la guía de instalación (tabs iOS/Android, pasos 1-2-3). |
-| `PwaWelcomeRedirect.tsx` | Guard en `/chat`: redirige a `/bienvenida` si no se ha visto. |
+| `PwaWelcomeStep.tsx` | CTA "Entrar al Chat" primero; guía opcional de instalación (tabs iOS/Android). |
+| `PwaWelcomeRedirect.tsx` | Guard en `/chat`: redirige a `/bienvenida` si móvil y no se ha visto. |
 
 ### `src/lib/pwaWelcome.ts`
 
 - `hasSeenPwaWelcome(userId)` — consulta `sessionStorage` + `localStorage`.
 - `markPwaWelcomeSeen(userId)` — persiste en ambos storages.
+- `isMobileDevice()` — detecta iPhone/iPad/Android por `userAgent`.
+- `shouldShowPwaWelcome(userId)` — solo móvil y si no se ha visto la guía.
 - `detectDefaultPlatform()` — iOS o Android por `userAgent`.
 
 Ver el detalle de rutas en [05 · Rutas y páginas](./05-rutas-y-paginas.md) y el flujo del chat en [09 · Flujo del chat](./09-flujo-chat.md).

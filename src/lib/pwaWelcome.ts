@@ -26,6 +26,16 @@ export function markPwaWelcomeSeen(userId: string): void {
   }
 }
 
+export function isMobileDevice(): boolean {
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod|Android/i.test(ua);
+}
+
+export function shouldShowPwaWelcome(userId: string): boolean {
+  if (!isMobileDevice()) return false;
+  return !hasSeenPwaWelcome(userId);
+}
+
 export function detectDefaultPlatform(): PwaPlatform {
   const ua = navigator.userAgent;
   if (/iPhone|iPad|iPod/i.test(ua)) return "ios";

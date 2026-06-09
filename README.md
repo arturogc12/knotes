@@ -34,7 +34,9 @@ Esto levanta en paralelo:
 - **API** Express en `http://localhost:3099` (ChatGPT server-side)
 - **Frontend** Vite en `http://localhost:3000`
 
-El chat está en `http://localhost:3000/chat`.
+El chat está en `http://localhost:3000/chat`. Tras iniciar sesión, la app lleva al usuario al chat (`/chat`); en móvil, la primera visita puede pasar por la guía PWA (`/bienvenida`).
+
+Si instalas la PWA como acceso directo, el manifest abre `/chat` al instante (estilo ChatGPT). Guía de instalación: [docs/pwa-install-text.md](docs/pwa-install-text.md).
 
 ### Scripts útiles
 

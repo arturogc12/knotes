@@ -1,4 +1,5 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { Link, useLocation, useNavigationType, useOutlet } from "react-router-dom";
 import { Layers, Menu, MessageCircle, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PatientDrawerProvider, usePatientDrawer } from "../../contexts/PatientDrawerContext";
@@ -14,6 +15,28 @@ function isTabActive(pathname: string, tabPath: string) {
     return pathname === "/nudos" || pathname.startsWith("/nudos/");
   }
   return pathname === tabPath;
+}
+
+function AnimatedPatientOutlet() {
+  const location = useLocation();
+  const outlet = useOutlet();
+  const navigationType = useNavigationType();
+  const isPop = navigationType === "POP";
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={isPop ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: isPop ? 0.1 : 0.15 }}
+        className="flex-1 flex flex-col min-h-0 w-full"
+      >
+        {outlet}
+      </motion.div>
+    </AnimatePresence>
+  );
 }
 
 function PatientAppLayoutInner() {
@@ -102,7 +125,7 @@ function PatientAppLayoutInner() {
             isChatRoute ? "max-md:max-w-none max-w-4xl" : "max-w-4xl"
           }`}
         >
-          <Outlet />
+          <AnimatedPatientOutlet />
         </div>
       </main>
     </div>

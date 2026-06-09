@@ -1,5 +1,7 @@
 # Estructura de Contenido: Sección Pricing
 
+> Implementado en `src/components/landing/PricingSection.tsx` en la landing `/`. Los botones enlazan a `/login`; no hay billing integrado aún (ver [08 · Roadmap](./08-roadmap.md)).
+
 ## Bloque 1: Título y Subtítulo
 - **Título:** Invierte en el rendimiento de tu terapia
 - **Subtítulo:** Si ya inviertes en tu salud mental, haz que cada sesión cuente el doble. Llega a consulta con el trabajo hecho, por menos de lo que cuesta un café a la semana.

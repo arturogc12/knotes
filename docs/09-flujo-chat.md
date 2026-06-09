@@ -147,20 +147,24 @@ Cada pregunta se hace **tras la respuesta del usuario** a la anterior.
 
 ---
 
-## 6. Acceso al chat (primera sesión)
+## 6. Acceso al chat (primera sesión y PWA)
 
-Tras registrarse o iniciar sesión por primera vez, el usuario pasa por `/bienvenida` (guía de instalación PWA) antes de entrar al chat.
+Tras registrarse o iniciar sesión, el destino depende de plataforma y si ya vio la guía PWA:
 
 ```
-Login / OAuth  →  /bienvenida (solo 1ª vez)  →  /chat
-                      │
-                      └─ "Entrar al Chat" (un solo clic)
+Login / OAuth  →  getPostAuthDestination()
+                      ├─ Desktop ──────────────► /chat
+                      ├─ Móvil 1ª vez ─────────► /bienvenida → "Entrar al Chat" → /chat
+                      └─ Móvil visitas posteriores ► /chat
+
+PWA instalada  →  manifest start_url /chat  →  /chat (o /login sin sesión)
 ```
 
-- Implementación: `src/pages/PwaWelcome.tsx`, `src/components/pwa/PwaWelcomeStep.tsx`.
+- Implementación: `src/pages/PwaWelcome.tsx`, `src/components/pwa/PwaWelcomeStep.tsx`, `public/manifest.webmanifest`.
 - Persistencia: `localStorage` + `sessionStorage` (`knotes:pwa-welcome-seen:<userId>`).
 - Al pulsar "Entrar al Chat" se navega a `/chat` con estado `welcomeDismissed: true` para evitar rebotes del guard (`PwaWelcomeRedirect`).
-- En visitas posteriores el usuario va directo a `/chat`.
+- La guía de instalación es **opcional** y se muestra después del CTA; los pasos indican instalar **desde el chat** (iOS guarda la URL actual al añadir a inicio).
+- En visitas posteriores y en desktop el usuario va directo a `/chat`.
 
 ---
 

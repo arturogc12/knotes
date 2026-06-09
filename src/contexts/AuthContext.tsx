@@ -86,6 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      sessionStorage.removeItem("knotes:app-stack-rooted");
+    } catch {
+      // ignore
+    }
     await supabase.auth.signOut();
   }, []);
 
