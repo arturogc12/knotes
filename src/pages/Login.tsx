@@ -108,6 +108,14 @@ export default function Login() {
                 </button>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => navigate("/chat")}
+              className="w-full flex justify-center py-3 px-4 border-2 border-dashed border-[#8DA399]/50 rounded-[2rem] text-sm font-semibold text-[#8DA399] bg-[#E8EEEB]/30 hover:bg-[#E8EEEB]/60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8DA399] transition-colors"
+            >
+              Probar chat (demo)
+            </button>
             
             <p className="text-xs text-center text-[#5D6D66] mt-8 px-4 opacity-75">
               Integración preparada para Supabase Auth con `persistSession: true`. Tras iniciar sesión, la PWA te redirigirá a /chat.

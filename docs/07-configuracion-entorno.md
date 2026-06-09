@@ -73,3 +73,44 @@ coverage/
 ```
 
 **Repositorio remoto:** `https://github.com/arturogc12/knotes.git` (rama principal: `main`).
+
+## Despliegue en Vercel
+
+El frontend se publica como SPA estática (`dist/`) y el API corre como funciones serverless en `api/`.
+
+### Configuración del proyecto
+
+| Ajuste | Valor |
+|--------|-------|
+| Framework Preset | Vite |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+
+El archivo [`vercel.json`](../vercel.json) reescribe todas las rutas excepto `/api/*` hacia `index.html`, de modo que `/chat`, `/login`, etc. funcionen al entrar directamente por URL.
+
+### Variables de entorno (Vercel Dashboard)
+
+Configúralas en **Project Settings → Environment Variables** (Production y, si quieres, Preview):
+
+| Variable | Obligatoria | Descripción |
+|----------|-------------|-------------|
+| `OPENAI_API_KEY` | Sí | Clave de OpenAI. Solo server-side. |
+| `OPENAI_MODEL` | No | Modelo (por defecto `gpt-4o-mini`). |
+
+No subas `.env.local` al repositorio; en Vercel las variables se inyectan en `process.env` automáticamente.
+
+### Endpoints en producción
+
+| Ruta | Función |
+|------|---------|
+| `GET /api/health` | Comprueba que el API responde (`{ ok: true }`). |
+| `POST /api/chat` | Chat conversacional TCC. |
+| `POST /api/transcribe` | Transcripción de voz (Whisper). |
+
+### Verificación tras el deploy
+
+1. Abre `https://tu-app.vercel.app/chat` — debe cargar la pantalla de chat (sin 404).
+2. Abre `https://tu-app.vercel.app/api/health` — debe devolver `{ "ok": true }`.
+3. En `/login`, pulsa **Probar chat (demo)** o envía un mensaje en el chat.
+
+> **Límite de voz en Vercel:** `/api/transcribe` acepta bodies de hasta ~4 MB (audio en base64). Grabaciones largas pueden fallar; el chat por texto no tiene esta limitación.
