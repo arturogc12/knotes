@@ -52,8 +52,10 @@ En el dashboard de Supabase:
    - Site URL: `http://localhost:3000` (y la URL de producción).
    - Redirect URLs: `http://localhost:3000/login`, `http://localhost:3000/chat` (y equivalentes en producción).
 2. **Authentication → Providers:** activa Email (Magic Link) y Google.
-3. El cliente en `src/lib/supabase.ts` usa `persistSession: true` y `detectSessionInUrl: true`.
-4. Ejecuta la migración `supabase/migrations/001_auth_and_nudos.sql` en **SQL Editor** (tablas `profiles`, `chat_sessions`, `nudos` + RLS).
+3. El cliente en `src/lib/supabase.ts` guarda la sesión en **sessionStorage** (por pestaña): sobrevive recargas (F5) pero **no** al cerrar la pestaña. Usa `persistSession: true`, `autoRefreshToken: true` y `detectSessionInUrl: true`.
+4. Ejecuta las migraciones en **SQL Editor**:
+   - `supabase/migrations/001_auth_and_nudos.sql`
+   - `supabase/migrations/002_fix_profiles_oauth.sql` (obligatoria si Google devuelve *Database error saving new user*).
 
 ### Google OAuth (consola externa)
 

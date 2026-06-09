@@ -9,8 +9,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// sessionStorage: la sesión sobrevive recargas en la misma pestaña,
+// pero se elimina al cerrarla (privacidad en app de salud mental).
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    storage: window.sessionStorage,
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
