@@ -1,20 +1,47 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# K-Notes
 
-# Run and deploy your AI Studio app
+El diario de terapia que se escribe solo mientras te desahogas. Software de auto-reflexión basado en TCC para pacientes y automatización de análisis funcional para terapeutas.
 
-This contains everything you need to run your app locally.
+Documentación del proyecto: [docs/README.md](docs/README.md)
 
-View your app in AI Studio: https://ai.studio/apps/a3479fb7-c824-47dc-bd71-162f168b23b6
+## Requisitos
 
-## Run Locally
+- Node.js (reciente)
+- npm
 
-**Prerequisites:**  Node.js
+## Configuración
 
+1. Instala dependencias:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm install
+```
+
+2. Crea `.env.local` a partir de `.env.example` y configura:
+
+- `OPENAI_API_KEY` — tu clave de OpenAI (ChatGPT)
+- `OPENAI_MODEL` — modelo a usar (por defecto `gpt-4o-mini`)
+- `PORT` — puerto del API (por defecto `3099`)
+
+## Desarrollo
+
+```bash
+npm run dev
+```
+
+Esto levanta en paralelo:
+
+- **API** Express en `http://localhost:3099` (ChatGPT server-side)
+- **Frontend** Vite en `http://localhost:3000`
+
+El chat está en `http://localhost:3000/chat`.
+
+### Scripts útiles
+
+| Script | Descripción |
+|--------|-------------|
+| `npm run dev` | API + frontend |
+| `npm run dev:web` | Solo Vite |
+| `npm run dev:api` | Solo API Express |
+| `npm run build` | Build de producción |
+| `npm run lint` | Chequeo de tipos TypeScript |
