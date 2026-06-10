@@ -53,6 +53,7 @@ export default function Chat() {
   const lastBubbleRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const restoredScrollDoneRef = useRef(false);
+  const scrollPendingRef = useRef(false);
 
   const historyRef = useRef(history);
   const chatStateRef = useRef(chatState);
@@ -65,25 +66,52 @@ export default function Chat() {
     shouldAutoScrollRef.current = true;
   }, []);
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+  const applyScrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const el = scrollContainerRef.current;
+    const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
+    if (isMobile && el) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
     const bottom = bottomRef.current;
     if (bottom) {
       bottom.scrollIntoView({ block: "end", behavior });
       return;
     }
-    const el = scrollContainerRef.current;
     if (el) {
       el.scrollTo({ top: el.scrollHeight, behavior });
     }
   }, []);
 
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehavior = "auto") => {
+      applyScrollToBottom(behavior);
+    },
+    [applyScrollToBottom],
+  );
+
+  const scheduleScrollToBottom = useCallback(() => {
+    if (!shouldAutoScrollRef.current) return;
+    if (scrollPendingRef.current) return;
+    scrollPendingRef.current = true;
+    requestAnimationFrame(() => {
+      scrollPendingRef.current = false;
+      if (!shouldAutoScrollRef.current) return;
+      applyScrollToBottom("auto");
+    });
+  }, [applyScrollToBottom]);
+
   const maybeScrollToBottom = useCallback(
     (behavior: ScrollBehavior = "auto") => {
-      if (shouldAutoScrollRef.current) {
-        scrollToBottom(behavior);
+      if (!shouldAutoScrollRef.current) return;
+      const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
+      if (isMobile) {
+        scheduleScrollToBottom();
+      } else {
+        applyScrollToBottom(behavior);
       }
     },
-    [scrollToBottom],
+    [scheduleScrollToBottom, applyScrollToBottom],
   );
 
   const handleScroll = useCallback(() => {
@@ -371,21 +399,19 @@ export default function Chat() {
   const isNewConversationDisabled =
     newConversationDisabled || isTyping || isLoading || isTranscribing;
 
-  const voiceHint = isRecording
-    ? t("chat.voiceHint.listening")
-    : isTyping
-      ? t("chat.voiceHint.waitTyping")
+  const footerStatus = error
+    ? error
+    : isRecording
+      ? t("chat.voiceHint.listening")
       : isTranscribing
         ? t("chat.voiceHint.transcribing")
         : isClosing
           ? t("chat.voiceHint.closing")
           : isClosed
             ? t("chat.voiceHint.closed")
-            : t("chat.voiceHint.tapToSpeak");
+            : null;
 
-  const footerStatus = error ?? voiceHint;
-  const showFooterStatus =
-    !!error || isRecording || isTranscribing || isTyping || isClosing || isClosed;
+  const showFooterStatus = footerStatus !== null;
 
   const handleMicClick = async () => {
     if (voiceBlocked && !isRecording) return;
@@ -470,7 +496,7 @@ export default function Chat() {
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll p-4 md:p-5 flex flex-col gap-4"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll p-4 md:p-5 max-md:pb-2 max-md:scroll-pb-28 flex flex-col gap-4"
         >
           {isLoading && messages.length === 0 && (
             <p className="text-center text-sm text-[#5A7080] animate-pulse py-8">
@@ -504,34 +530,33 @@ export default function Chat() {
           <div ref={bottomRef} aria-hidden="true" className="shrink-0 h-px" />
         </div>
 
-        <div
-          className={`shrink-0 bg-[#EEF6FC]/40 border-t border-[#C8DAE8]/80 px-4 max-md:pb-[max(1rem,env(safe-area-inset-bottom))] ${
-            showFooterStatus ? "py-5" : "py-4"
-          }`}
-        >
-          <div
-            className={`flex flex-col items-center ${showFooterStatus ? "gap-3" : "gap-0"}`}
-          >
-            {showFooterStatus && (
-              <p
-                className={`text-sm text-center px-2 transition-colors ${
-                  error
-                    ? "text-red-600 font-medium"
-                    : isRecording
+        <div className="shrink-0 relative z-10 max-md:bg-[#EEF6FC] md:bg-[#EEF6FC]/40 border-t border-[#C8DAE8]/80 px-4 py-6 max-md:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <div className="grid grid-rows-[auto_auto] justify-items-center gap-3">
+            <div
+              className={`w-full max-w-sm ${
+                showFooterStatus ? "min-h-11 max-h-[3.25rem]" : "h-0 overflow-hidden"
+              }`}
+            >
+              {showFooterStatus && (
+                <p
+                  key={footerStatus}
+                  className={`text-sm text-center px-3 leading-snug line-clamp-2 ${
+                    error
                       ? "text-red-600 font-medium"
-                      : isTranscribing
-                        ? "text-[#5A7080] animate-pulse"
+                      : isRecording
+                        ? "text-red-600 font-medium"
                         : "text-[#5A7080]"
-                }`}
-              >
-                {footerStatus}
-              </p>
-            )}
+                  }`}
+                >
+                  {footerStatus}
+                </p>
+              )}
+            </div>
 
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center w-24 h-24 md:w-28 md:h-28">
               {isRecording && (
                 <span
-                  className="absolute inset-0 m-auto w-32 h-32 md:w-36 md:h-36 rounded-full bg-red-400/30 animate-ping"
+                  className="absolute inset-0 m-auto w-24 h-24 md:w-28 md:h-28 rounded-full bg-red-400/30 animate-ping"
                   aria-hidden="true"
                 />
               )}
@@ -540,7 +565,7 @@ export default function Chat() {
                 onClick={() => void handleMicClick()}
                 aria-disabled={voiceBlocked && !isRecording}
                 aria-label={isRecording ? "Detener grabación y enviar" : "Pulsa para hablar"}
-                className={`relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                className={`relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all shadow-lg ${
                   voiceBlocked && !isRecording
                     ? "opacity-50 cursor-not-allowed shadow-none"
                     : ""
@@ -551,9 +576,9 @@ export default function Chat() {
                 }`}
               >
                 {isRecording ? (
-                  <Square className="w-10 h-10 md:w-11 md:h-11 fill-current" />
+                  <Square className="w-8 h-8 md:w-9 md:h-9 fill-current" />
                 ) : (
-                  <Mic className="w-11 h-11 md:w-12 md:h-12" />
+                  <Mic className="w-9 h-9 md:w-10 md:h-10" />
                 )}
               </button>
             </div>
