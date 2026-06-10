@@ -6,16 +6,17 @@ Sirve como especificación tanto para la **UI** (animación de tecleo) como para
 
 ---
 
-## 1. Ritmo de escritura (animación de tecleo)
+## 1. Ritmo de escritura (animación estilo Gemini)
 
-- Cada mensaje de la IA aparece con un **efecto máquina de escribir**, carácter a carácter.
-- **Velocidad: ~15 ms por carácter** (≈ 67 caracteres por segundo).
-- Mientras teclea:
-  - Se muestra un cursor o indicador de "escribiendo".
-  - El campo de entrada del usuario permanece **deshabilitado** hasta que el mensaje termina de aparecer (evita solapar turnos).
-- Tras terminar de teclear, se habilita de nuevo el input y la IA queda a la espera de la respuesta del usuario.
+- Cada mensaje de la IA se **revela por palabras** (no carácter a carácter), con ritmo equivalente a **~22 ms por carácter**.
+- Mientras la IA procesa la respuesta del usuario (llamada API), se muestra una burbuja con **puntos animados** ("pensando").
+- Mientras se revela el texto:
+  - Se muestra un cursor o indicador de "escribiendo" al final del mensaje.
+  - El micrófono permanece **deshabilitado** hasta que el mensaje termina de aparecer (evita solapar turnos).
+- Tras terminar de revelar el mensaje, se habilita de nuevo el micrófono y la IA queda a la espera de la respuesta del usuario.
+- El scroll durante la revelación va **throttled** (1 vez por frame) para evitar tirones cuando el historial es largo.
 
-> Parámetro de referencia: `TYPING_SPEED_MS = 15` en `src/pages/Chat.tsx`.
+> Parámetros de referencia: `TYPING_MS_PER_CHAR = 22` y `wordChunks()` en `src/lib/chatTypewriter.ts`.
 
 ---
 

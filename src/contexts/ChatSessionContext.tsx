@@ -57,6 +57,8 @@ type ChatSessionContextValue = {
 
 const ChatSessionContext = createContext<ChatSessionContextValue | null>(null);
 
+const STORAGE_DEBOUNCE_MS = 450;
+
 function storageKey(userId: string) {
   return `knotes:chat-session:${userId}`;
 }
@@ -128,6 +130,11 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
   const nextIdRef = useRef(0);
   const startingRef = useRef(false);
   const prevUserIdRef = useRef<string | null>(null);
+  const sessionSnapshotRef = useRef(session);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveImmediateRef = useRef(false);
+
+  sessionSnapshotRef.current = session;
 
   useEffect(() => {
     if (prevUserIdRef.current && !userId) {
@@ -152,10 +159,45 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     }
   }, [userId]);
 
+  const flushSave = useCallback(() => {
+    if (!userId || !sessionSnapshotRef.current.initialized) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = null;
+    saveToStorage(userId, sessionSnapshotRef.current);
+  }, [userId]);
+
+  const scheduleSave = useCallback(
+    (immediate = false) => {
+      if (!userId || !sessionSnapshotRef.current.initialized) return;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (immediate) {
+        saveToStorage(userId, sessionSnapshotRef.current);
+        saveTimerRef.current = null;
+        return;
+      }
+      saveTimerRef.current = setTimeout(() => {
+        saveToStorage(userId, sessionSnapshotRef.current);
+        saveTimerRef.current = null;
+      }, STORAGE_DEBOUNCE_MS);
+    },
+    [userId],
+  );
+
   useEffect(() => {
     if (!userId || !session.initialized) return;
-    saveToStorage(userId, session);
-  }, [userId, session]);
+    const immediate = saveImmediateRef.current;
+    saveImmediateRef.current = false;
+    scheduleSave(immediate);
+  }, [userId, session, scheduleSave]);
+
+  useEffect(() => {
+    const onPageHide = () => flushSave();
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [flushSave]);
 
   const setMessages = useCallback(
     (updater: UiMessage[] | ((prev: UiMessage[]) => UiMessage[])) => {
@@ -170,6 +212,7 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
 
   const setHistory = useCallback(
     (updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+      saveImmediateRef.current = true;
       setSession((prev) => ({
         ...prev,
         initialized: true,
@@ -181,6 +224,7 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
 
   const setChatState = useCallback(
     (updater: ChatState | ((prev: ChatState) => ChatState)) => {
+      saveImmediateRef.current = true;
       setSession((prev) => ({
         ...prev,
         initialized: true,
@@ -197,6 +241,7 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markSaved = useCallback(() => {
+    saveImmediateRef.current = true;
     setSession((prev) => ({ ...prev, saved: true }));
   }, []);
 
@@ -224,6 +269,7 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     startingRef.current = true;
     try {
       const { reply, state } = await fetchWelcome();
+      saveImmediateRef.current = true;
       setSession({
         messages: [],
         history: [{ role: "assistant", content: reply }],
@@ -248,8 +294,11 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     clearStorage(userId);
     nextIdRef.current = 0;
     startingRef.current = false;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = null;
 
     const { reply, state } = await fetchWelcome();
+    saveImmediateRef.current = true;
     setSession((prev) => ({
       messages: [],
       history: [{ role: "assistant", content: reply }],

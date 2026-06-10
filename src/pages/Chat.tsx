@@ -1,13 +1,14 @@
 ﻿import { Menu, Mic, Square, SquarePen } from "lucide-react";
-import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MessageBubble } from "../components/chat/MessageBubble";
 import { useAuth } from "../contexts/AuthContext";
 import { useChatSession } from "../contexts/ChatSessionContext";
 import { usePatientDrawer } from "../contexts/PatientDrawerContext";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import { useNewConversation } from "../hooks/useNewConversation";
 import { saveClosedChatSession } from "../lib/chatSessionsApi";
+import { delayForChunk, wordChunks } from "../lib/chatTypewriter";
 import {
   fetchClosing,
   fetchFinalRatingQuestion,
@@ -15,8 +16,6 @@ import {
   type ChatMessage,
   type ChatState,
 } from "../lib/chatApi";
-
-const TYPING_SPEED_MS = 15;
 const MOBILE_MEDIA = "(max-width: 767px)";
 const SCROLL_NEAR_BOTTOM_THRESHOLD = 80;
 
@@ -41,10 +40,12 @@ export default function Chat() {
   const { startNewConversation, disabled: newConversationDisabled } = useNewConversation();
 
   const [isTyping, setIsTyping] = useState(false);
+  const [isAwaitingReply, setIsAwaitingReply] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollHeightRef = useRef(0);
   const pendingTypingRef = useRef<{ id: number; fullText: string } | null>(null);
   const bootstrappedRef = useRef(false);
   const welcomeStartedRef = useRef<string | null>(null);
@@ -66,22 +67,30 @@ export default function Chat() {
     shouldAutoScrollRef.current = true;
   }, []);
 
-  const applyScrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
-    const el = scrollContainerRef.current;
-    const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
-    if (isMobile && el) {
-      el.scrollTop = el.scrollHeight;
-      return;
-    }
-    const bottom = bottomRef.current;
-    if (bottom) {
-      bottom.scrollIntoView({ block: "end", behavior });
-      return;
-    }
-    if (el) {
-      el.scrollTo({ top: el.scrollHeight, behavior });
-    }
-  }, []);
+  const applyScrollToBottom = useCallback(
+    (behavior: ScrollBehavior = "auto", instant = false) => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+
+      const target = el.scrollHeight;
+      const atBottom = el.scrollTop + el.clientHeight >= target - 4;
+
+      if (instant && atBottom && target === lastScrollHeightRef.current) return;
+
+      lastScrollHeightRef.current = target;
+
+      const useInstant =
+        instant || behavior === "auto" || window.matchMedia(MOBILE_MEDIA).matches;
+
+      if (useInstant) {
+        el.scrollTop = target;
+        return;
+      }
+
+      el.scrollTo({ top: target, behavior });
+    },
+    [],
+  );
 
   const scrollToBottom = useCallback(
     (behavior: ScrollBehavior = "auto") => {
@@ -97,22 +106,14 @@ export default function Chat() {
     requestAnimationFrame(() => {
       scrollPendingRef.current = false;
       if (!shouldAutoScrollRef.current) return;
-      applyScrollToBottom("auto");
+      applyScrollToBottom("auto", true);
     });
   }, [applyScrollToBottom]);
 
-  const maybeScrollToBottom = useCallback(
-    (behavior: ScrollBehavior = "auto") => {
-      if (!shouldAutoScrollRef.current) return;
-      const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
-      if (isMobile) {
-        scheduleScrollToBottom();
-      } else {
-        applyScrollToBottom(behavior);
-      }
-    },
-    [scheduleScrollToBottom, applyScrollToBottom],
-  );
+  const maybeScrollToBottom = useCallback(() => {
+    if (!shouldAutoScrollRef.current) return;
+    scheduleScrollToBottom();
+  }, [scheduleScrollToBottom]);
 
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -132,36 +133,72 @@ export default function Chat() {
     [scrollToBottom],
   );
 
+  const clearTypingTimeout = useCallback(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+  }, []);
+
   const typeAiMessage = useCallback(
-    async (fullText: string): Promise<void> => {
+    async (fullText: string, existingId?: number): Promise<void> => {
+      setIsAwaitingReply(false);
       setIsTyping(true);
       stickToBottom();
-      const id = nextId();
+      lastScrollHeightRef.current = 0;
+
+      const id = existingId ?? nextId();
       pendingTypingRef.current = { id, fullText };
-      setMessages((prev) => [...prev, { id, role: "ai", text: "" }]);
+
+      if (existingId === undefined) {
+        setMessages((prev) => [...prev, { id, role: "ai", text: "" }]);
+      }
 
       await flushScroll("auto");
 
+      const chunks = wordChunks(fullText);
+
       return new Promise((resolve) => {
-        let i = 0;
-        intervalRef.current = setInterval(() => {
-          i++;
+        if (chunks.length === 0) {
+          pendingTypingRef.current = null;
+          setIsTyping(false);
+          resolve();
+          return;
+        }
+
+        let index = 0;
+        let accumulated = "";
+
+        const revealNext = () => {
+          accumulated += chunks[index];
+          index++;
           setMessages((prev) =>
-            prev.map((m) => (m.id === id ? { ...m, text: fullText.slice(0, i) } : m)),
+            prev.map((m) => (m.id === id ? { ...m, text: accumulated } : m)),
           );
-          maybeScrollToBottom("auto");
-          if (i >= fullText.length) {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            intervalRef.current = null;
+          maybeScrollToBottom();
+
+          if (index >= chunks.length) {
+            clearTypingTimeout();
             pendingTypingRef.current = null;
             setIsTyping(false);
-            maybeScrollToBottom("auto");
+            lastScrollHeightRef.current = 0;
+            maybeScrollToBottom();
             resolve();
+            return;
           }
-        }, TYPING_SPEED_MS);
+
+          typingTimeoutRef.current = setTimeout(revealNext, delayForChunk(chunks[index]));
+        };
+
+        typingTimeoutRef.current = setTimeout(revealNext, delayForChunk(chunks[0]));
       });
     },
-    [nextId, setMessages, flushScroll, stickToBottom, maybeScrollToBottom],
+    [
+      nextId,
+      setMessages,
+      flushScroll,
+      stickToBottom,
+      maybeScrollToBottom,
+      clearTypingTimeout,
+    ],
   );
 
   const persistClosedSession = useCallback(
@@ -225,12 +262,17 @@ export default function Chat() {
 
       setError(null);
       stickToBottom();
-      setMessages((prev) => [...prev, { id: nextId(), role: "user", text: trimmed }]);
+      const userMessageId = nextId();
+      const thinkingId = nextId();
+      setMessages((prev) => [
+        ...prev,
+        { id: userMessageId, role: "user", text: trimmed },
+        { id: thinkingId, role: "ai", text: "" },
+      ]);
+      setIsAwaitingReply(true);
 
       const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
       await flushScroll(isMobile ? "auto" : "smooth");
-
-      setIsTyping(true);
 
       try {
         const { reply, state } = await sendChatMessage(
@@ -245,7 +287,7 @@ export default function Chat() {
         ];
         setHistory(newHistory);
         setChatState(state);
-        await typeAiMessage(reply);
+        await typeAiMessage(reply, thinkingId);
 
         if (state.phase === "finalRating" && !state.finalRatingAsked) {
           await deliverFinalRatingQuestion(newHistory, state);
@@ -253,7 +295,9 @@ export default function Chat() {
           await deliverClosingMessage(newHistory, state);
         }
       } catch (e) {
+        setIsAwaitingReply(false);
         setIsTyping(false);
+        setMessages((prev) => prev.filter((m) => m.id !== thinkingId));
         setError(e instanceof Error ? e.message : "Error al enviar el mensaje");
       }
     },
@@ -337,7 +381,7 @@ export default function Chat() {
     let cancelled = false;
     setIsLoading(true);
     setError(null);
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    clearTypingTimeout();
     pendingTypingRef.current = null;
 
     (async () => {
@@ -354,9 +398,9 @@ export default function Chat() {
 
     return () => {
       cancelled = true;
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = null;
+      clearTypingTimeout();
       setIsTyping(false);
+      setIsAwaitingReply(false);
       welcomeStartedRef.current = null;
       if (pendingTypingRef.current) {
         const { id } = pendingTypingRef.current;
@@ -364,7 +408,7 @@ export default function Chat() {
         pendingTypingRef.current = null;
       }
     };
-  }, [sessionGeneration, welcomeContent, typeAiMessage, setMessages]);
+  }, [sessionGeneration, welcomeContent, typeAiMessage, setMessages, clearTypingTimeout]);
 
   useEffect(() => {
     restoredScrollDoneRef.current = false;
@@ -379,14 +423,15 @@ export default function Chat() {
   }, [messages.length, isTyping, isLoading, stickToBottom, flushScroll]);
 
   useEffect(() => {
+    if (isTyping || isAwaitingReply) return;
     const el = lastBubbleRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      maybeScrollToBottom("auto");
+      scheduleScrollToBottom();
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [messages.length, isTyping, maybeScrollToBottom]);
+  }, [messages.length, isTyping, isAwaitingReply, scheduleScrollToBottom]);
 
   useEffect(() => {
     stickToBottom();
@@ -395,9 +440,14 @@ export default function Chat() {
 
   const isClosed = chatState.phase === "closed";
   const isClosing = chatState.phase === "closing";
-  const voiceBlocked = isTyping || isTranscribing || isClosed || isClosing;
+  const voiceBlocked =
+    isTyping || isAwaitingReply || isTranscribing || isClosed || isClosing;
   const isNewConversationDisabled =
-    newConversationDisabled || isTyping || isLoading || isTranscribing;
+    newConversationDisabled ||
+    isTyping ||
+    isAwaitingReply ||
+    isLoading ||
+    isTranscribing;
 
   const footerStatus = error
     ? error
@@ -424,8 +474,9 @@ export default function Chat() {
   };
 
   const handleNewConversation = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    clearTypingTimeout();
     pendingTypingRef.current = null;
+    setIsAwaitingReply(false);
     void startNewConversation();
   };
 
@@ -496,7 +547,7 @@ export default function Chat() {
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll p-4 md:p-5 max-md:pb-2 max-md:scroll-pb-28 flex flex-col gap-4"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll [overflow-anchor:none] p-4 md:p-5 max-md:pb-2 max-md:scroll-pb-28 flex flex-col gap-4"
         >
           {isLoading && messages.length === 0 && (
             <p className="text-center text-sm text-[#5A7080] animate-pulse py-8">
@@ -506,24 +557,22 @@ export default function Chat() {
 
           {messages.map((m, idx) => {
             const isLast = idx === messages.length - 1;
-            const showCaret = m.role === "ai" && isLast && isTyping;
+            const isThinking =
+              isAwaitingReply && m.role === "ai" && isLast && m.text === "";
+            const showCaret = m.role === "ai" && isLast && isTyping && !isThinking;
             return (
-              <motion.div
+              <div
                 key={m.id}
                 ref={isLast ? lastBubbleRef : undefined}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={
-                  m.role === "ai"
-                    ? "bg-[#EEF6FC] border border-[#DDEAF5] rounded-[1.5rem] rounded-tl-sm p-4 md:p-5 text-sm text-[#3D4F5C] shadow-sm max-w-[85%] leading-relaxed whitespace-pre-line"
-                    : "bg-gradient-to-br from-[#7EB8DA] to-[#5A9BC4] text-white rounded-[1.5rem] rounded-tr-sm p-4 md:p-5 text-sm shadow-md max-w-[85%] self-end leading-relaxed whitespace-pre-line"
-                }
+                className={m.role === "user" ? "self-end" : undefined}
               >
-                {m.text}
-                {showCaret && (
-                  <span className="inline-block w-[2px] h-4 bg-current ml-0.5 align-middle animate-pulse" />
-                )}
-              </motion.div>
+                <MessageBubble
+                  role={m.role}
+                  text={m.text}
+                  showCaret={showCaret}
+                  isThinking={isThinking}
+                />
+              </div>
             );
           })}
 
