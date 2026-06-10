@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+﻿import { motion } from "motion/react";
 import { ArrowLeft, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -63,8 +63,8 @@ export default function Login() {
 
   if (loading || session) {
     return (
-      <div className="min-h-screen bg-[#F7F5F2] flex items-center justify-center font-sans">
-        <div className="w-10 h-10 bg-[#C17B5C] rounded-xl flex items-center justify-center animate-pulse">
+      <div className="min-h-screen bg-[#F5F9FC] flex items-center justify-center font-sans">
+        <div className="w-10 h-10 bg-[#7EB8DA] rounded-xl flex items-center justify-center animate-pulse">
           <span className="text-white font-serif italic text-lg font-bold">K</span>
         </div>
       </div>
@@ -72,10 +72,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F2] flex flex-col font-sans selection:bg-[#C17B5C]/20">
+    <div className="min-h-screen bg-[#F5F9FC] flex flex-col font-sans selection:bg-[#7EB8DA]/20">
       <Link
         to="/"
-        className="inline-flex items-center gap-2 text-sm text-[#5D6D66] hover:text-[#2D2D2D] transition-colors px-4 pt-6 sm:px-8"
+        className="inline-flex items-center gap-2 text-sm text-[#5A7080] hover:text-[#2A3540] transition-colors px-4 pt-6 sm:px-8"
       >
         <ArrowLeft className="w-4 h-4" />
         {t("login.backHome")}
@@ -88,14 +88,14 @@ export default function Login() {
         className="sm:mx-auto sm:w-full sm:max-w-md"
       >
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-[#C17B5C] rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-[#7EB8DA] rounded-xl flex items-center justify-center">
             <span className="text-white font-serif italic text-2xl font-bold">K</span>
           </div>
         </div>
-        <h2 className="mt-6 text-center font-sans text-3xl font-semibold tracking-tight text-[#2D2D2D]">
+        <h2 className="mt-6 text-center font-sans text-3xl font-semibold tracking-tight text-[#2A3540]">
           {t("login.title")}
         </h2>
-        <p className="mt-2 text-center text-sm text-[#5D6D66] opacity-80">{t("login.subtitle")}</p>
+        <p className="mt-2 text-center text-sm text-[#5A7080] opacity-80">{t("login.subtitle")}</p>
       </motion.div>
 
       <motion.div
@@ -104,15 +104,15 @@ export default function Login() {
         transition={{ delay: 0.1 }}
         className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
       >
-        <div className="bg-white py-8 px-4 shadow-xl shadow-[#C17B5C]/5 border border-[#E8D8CC] sm:rounded-[2rem] sm:px-10">
+        <div className="bg-white py-8 px-4 shadow-xl shadow-[#7EB8DA]/5 border border-[#C8DAE8] sm:rounded-[2rem] sm:px-10">
           <form className="space-y-6" onSubmit={handleMagicLink}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[#4A4A4A]">
+              <label htmlFor="email" className="block text-sm font-medium text-[#3D4F5C]">
                 {t("login.email")}
               </label>
               <div className="mt-2 relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-[#C17B5C]/60" />
+                  <Mail className="h-5 w-5 text-[#7EB8DA]/60" />
                 </div>
                 <input
                   id="email"
@@ -123,19 +123,19 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t("login.emailPlaceholder")}
-                  className="appearance-none block w-full pl-11 pr-4 py-3.5 border border-[#E8D8CC] rounded-xl bg-[#F7F5F2]/50 shadow-sm placeholder-[#5D6D66]/50 focus:outline-none focus:ring-2 focus:ring-[#C17B5C]/50 focus:border-[#C17B5C]/50 focus:bg-white sm:text-sm transition-all"
+                  className="appearance-none block w-full pl-11 pr-4 py-3.5 border border-[#C8DAE8] rounded-xl bg-[#F5F9FC]/50 shadow-sm placeholder-[#5A7080]/50 focus:outline-none focus:ring-2 focus:ring-[#7EB8DA]/50 focus:border-[#7EB8DA]/50 focus:bg-white sm:text-sm transition-all"
                 />
               </div>
             </div>
 
             {message && (
-              <p className="text-sm text-[#5D6D66] bg-[#F2E8DE]/50 border border-[#E8D8CC] rounded-xl px-4 py-3">
+              <p className="text-sm text-[#5A7080] bg-[#E3EFF8]/50 border border-[#C8DAE8] rounded-xl px-4 py-3">
                 {message}
               </p>
             )}
 
             {error && (
-              <p className="text-sm text-[#A86548] bg-[#F2E8DE]/30 border border-[#C17B5C]/30 rounded-xl px-4 py-3">
+              <p className="text-sm text-[#5A9BC4] bg-[#E3EFF8]/30 border border-[#7EB8DA]/30 rounded-xl px-4 py-3">
                 {error}
               </p>
             )}
@@ -144,7 +144,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full flex justify-center py-3.5 px-4 rounded-[2rem] shadow-sm text-sm font-semibold text-white bg-[#C17B5C] hover:bg-[#A86548] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C17B5C] transition-all disabled:opacity-60 disabled:hover:translate-y-0"
+                className="w-full flex justify-center py-3.5 px-4 rounded-[2rem] shadow-sm text-sm font-semibold text-white bg-[#7EB8DA] hover:bg-[#5A9BC4] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7EB8DA] transition-all disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 {t("login.magicLink")}
               </button>
@@ -153,10 +153,10 @@ export default function Login() {
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#E8D8CC]" />
+                  <div className="w-full border-t border-[#C8DAE8]" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-white text-[#5D6D66] font-medium text-xs uppercase tracking-widest">
+                  <span className="px-3 bg-white text-[#5A7080] font-medium text-xs uppercase tracking-widest">
                     {t("login.divider")}
                   </span>
                 </div>
@@ -167,7 +167,7 @@ export default function Login() {
                   type="button"
                   onClick={handleGoogle}
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-3 py-3.5 px-4 border border-[#E8D8CC] rounded-[2rem] shadow-sm text-sm font-semibold text-[#4A4A4A] bg-white hover:bg-[#F7F5F2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C17B5C] transition-colors disabled:opacity-60"
+                  className="w-full flex items-center justify-center gap-3 py-3.5 px-4 border border-[#C8DAE8] rounded-[2rem] shadow-sm text-sm font-semibold text-[#3D4F5C] bg-white hover:bg-[#F5F9FC] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7EB8DA] transition-colors disabled:opacity-60"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path
@@ -192,7 +192,7 @@ export default function Login() {
               </div>
             </div>
 
-            <p className="text-xs text-center text-[#5D6D66] mt-8 px-4 opacity-75">
+            <p className="text-xs text-center text-[#5A7080] mt-8 px-4 opacity-75">
               {t("login.footer")}
             </p>
           </form>

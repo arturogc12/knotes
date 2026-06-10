@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+﻿import { motion } from "motion/react";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -49,7 +49,7 @@ export default function NudoDetail() {
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <p className="text-sm text-[#5D6D66] animate-pulse">Cargando nudo…</p>
+        <p className="text-sm text-[#5A7080] animate-pulse">Cargando nudo…</p>
       </div>
     );
   }
@@ -57,10 +57,10 @@ export default function NudoDetail() {
   if (notFound || !nudo) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <p className="text-[#5D6D66]">No encontramos este nudo.</p>
+        <p className="text-[#5A7080]">No encontramos este nudo.</p>
         <Link
           to="/nudos"
-          className="text-sm font-semibold text-[#C17B5C] hover:underline"
+          className="text-sm font-semibold text-[#7EB8DA] hover:underline"
         >
           Volver a Mis Nudos
         </Link>
@@ -76,7 +76,7 @@ export default function NudoDetail() {
     >
       <Link
         to="/nudos"
-        className="inline-flex items-center gap-2 text-sm text-[#5D6D66] hover:text-[#2D2D2D] transition-colors w-fit"
+        className="inline-flex items-center gap-2 text-sm text-[#5A7080] hover:text-[#2A3540] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         Mis Nudos
@@ -84,58 +84,88 @@ export default function NudoDetail() {
 
       <div>
         <div className="flex items-center gap-2 flex-wrap mb-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5D6D66]">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#5A7080]">
             {formatRelativeDate(nudo.date)}
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#C17B5C] bg-[#F2E8DE] px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#7EB8DA] bg-[#E3EFF8] px-2 py-0.5 rounded-full">
             {nudo.emotion}
           </span>
         </div>
-        <h1 className="text-2xl md:text-3xl font-semibold text-[#2D2D2D] tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#2A3540] tracking-tight">
           {nudo.title}
         </h1>
       </div>
 
-      <div className="bg-white/90 border border-[#E8D8CC] rounded-[2rem] p-6 shadow-sm">
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#C17B5C] mb-3">
+      <div className="bg-white/90 border border-[#C8DAE8] rounded-[2rem] p-6 shadow-sm">
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#7EB8DA] mb-3">
           Resumen de la conversación
         </h2>
-        <p className="text-sm text-[#4A4A4A] leading-relaxed">{nudo.summary}</p>
+        <p className="text-sm text-[#3D4F5C] leading-relaxed">{nudo.summary}</p>
       </div>
 
+      {(nudo.distressInitial ?? nudo.distressScale) !== undefined && (
+        <div className="bg-white/90 border border-[#C8DAE8] rounded-[2rem] p-6 shadow-sm">
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#7EB8DA] mb-3">
+            Intensidad emocional
+          </h2>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl font-semibold text-[#2A3540]">
+              {nudo.distressInitial ?? nudo.distressScale}
+              <span className="text-sm font-normal text-[#5A7080]">/10</span>
+            </span>
+            {nudo.distressFinal !== undefined && (
+              <>
+                <span className="text-[#7EB8DA]" aria-hidden="true">
+                  →
+                </span>
+                <span className="text-2xl font-semibold text-[#2A3540]">
+                  {nudo.distressFinal}
+                  <span className="text-sm font-normal text-[#5A7080]">/10</span>
+                </span>
+              </>
+            )}
+          </div>
+          <p className="text-xs text-[#5A7080] mt-2">
+            {nudo.distressFinal !== undefined
+              ? "Cómo puntuaste tu emoción al inicio y al final de la conversación."
+              : "Cómo puntuaste tu emoción al inicio de la conversación."}
+          </p>
+        </div>
+      )}
+
       <div className="space-y-4">
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#C17B5C] px-1">
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#7EB8DA] px-1">
           Análisis funcional A-B-C
         </h2>
 
-        <div className="p-5 bg-[#F7F5F2] rounded-[1.5rem] border border-[#E8D8CC]/60">
-          <span className="text-[10px] font-bold tracking-widest text-[#C17B5C] uppercase mb-2 block">
+        <div className="p-5 bg-[#F5F9FC] rounded-[1.5rem] border border-[#C8DAE8]/60">
+          <span className="text-[10px] font-bold tracking-widest text-[#7EB8DA] uppercase mb-2 block">
             A — Antecedente
           </span>
-          <p className="text-sm text-[#4A4A4A] leading-relaxed">{nudo.abc.antecedent}</p>
+          <p className="text-sm text-[#3D4F5C] leading-relaxed">{nudo.abc.antecedent}</p>
         </div>
 
-        <div className="p-5 bg-[#F7F5F2] rounded-[1.5rem] border border-[#E8D8CC]/60">
-          <span className="text-[10px] font-bold tracking-widest text-[#C17B5C] uppercase mb-2 block">
+        <div className="p-5 bg-[#F5F9FC] rounded-[1.5rem] border border-[#C8DAE8]/60">
+          <span className="text-[10px] font-bold tracking-widest text-[#7EB8DA] uppercase mb-2 block">
             B — Conducta / Pensamiento
           </span>
-          <p className="text-sm text-[#4A4A4A] leading-relaxed">{nudo.abc.belief}</p>
+          <p className="text-sm text-[#3D4F5C] leading-relaxed">{nudo.abc.belief}</p>
         </div>
 
-        <div className="p-5 bg-[#F7F5F2] rounded-[1.5rem] border border-[#E8D8CC]/60">
-          <span className="text-[10px] font-bold tracking-widest text-[#C17B5C] uppercase mb-2 block">
+        <div className="p-5 bg-[#F5F9FC] rounded-[1.5rem] border border-[#C8DAE8]/60">
+          <span className="text-[10px] font-bold tracking-widest text-[#7EB8DA] uppercase mb-2 block">
             C — Consecuencia
           </span>
-          <p className="text-sm text-[#4A4A4A] leading-relaxed">{nudo.abc.consequence}</p>
+          <p className="text-sm text-[#3D4F5C] leading-relaxed">{nudo.abc.consequence}</p>
         </div>
       </div>
 
       {nudo.alternativeThought && (
-        <div className="bg-[#F2E8DE]/50 border border-[#C17B5C]/20 rounded-[1.5rem] p-5">
-          <span className="text-[10px] font-bold tracking-widest text-[#C17B5C] uppercase mb-2 block">
+        <div className="bg-[#E3EFF8]/50 border border-[#7EB8DA]/20 rounded-[1.5rem] p-5">
+          <span className="text-[10px] font-bold tracking-widest text-[#7EB8DA] uppercase mb-2 block">
             Pensamiento alternativo
           </span>
-          <p className="text-sm text-[#4A4A4A] leading-relaxed italic">
+          <p className="text-sm text-[#3D4F5C] leading-relaxed italic">
             {nudo.alternativeThought}
           </p>
         </div>
@@ -144,7 +174,7 @@ export default function NudoDetail() {
       <div className="pt-2">
         <Link
           to="/nudos"
-          className="inline-flex items-center justify-center px-6 py-4 rounded-[2rem] text-sm font-semibold text-[#4A4A4A] border border-[#E8D8CC] bg-white/80 hover:bg-white transition-colors"
+          className="inline-flex items-center justify-center px-6 py-4 rounded-[2rem] text-sm font-semibold text-[#3D4F5C] border border-[#C8DAE8] bg-white/80 hover:bg-white transition-colors"
         >
           Volver a Mis Nudos
         </Link>

@@ -100,7 +100,7 @@ Conversación activa dentro de `PatientAppLayout`, con comportamiento responsive
 - **Desktop (`md+`):** tarjeta cálida centrada (`max-w-4xl` + `px-4` en el shell), bordes redondeados, pestañas superiores (sin `position: fixed`).
 
 - Conectado a ChatGPT vía `POST /api/chat`.
-- Burbujas IA en crema (`#FFF6F0`), usuario en terracota con gradiente.
+- Burbujas IA en hielo (`#EEF6FC`), usuario en azul pastel con gradiente.
 - Input de texto + micrófono (Whisper server-side). Input a 16px en móvil (anti-zoom iOS).
 - Animación de tecleo a 25 ms/carácter.
 - Flujo por fases TCC (ver [09 · Flujo del chat](./09-flujo-chat.md)).

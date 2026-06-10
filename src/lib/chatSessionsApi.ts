@@ -1,5 +1,6 @@
 import type { ChatMessage } from "./chatApi";
 import { createNudo } from "./nudosApi";
+import { requestAbcExtraction } from "./extractAbcApi";
 import { supabase } from "./supabase";
 
 function buildTitle(messages: ChatMessage[]): string {
@@ -22,6 +23,7 @@ export async function saveClosedChatSession(
   userId: string,
   messages: ChatMessage[],
   closingReply: string,
+  distress?: { initial?: number; final?: number },
 ): Promise<void> {
   const { data: session, error: sessionError } = await supabase
     .from("chat_sessions")
@@ -36,11 +38,22 @@ export async function saveClosedChatSession(
 
   if (sessionError) throw new Error(sessionError.message);
 
-  await createNudo({
+  const nudoId = await createNudo({
     userId,
     chatSessionId: session.id,
     title: buildTitle(messages),
     summary: closingReply,
     excerpt: buildExcerpt(messages, closingReply),
+    distressInitial: distress?.initial,
+    distressFinal: distress?.final,
   });
+
+  // Se espera la extracción para que el nudo quede completo (formato tarjeta)
+  // antes de confirmar al usuario que está guardado.
+  try {
+    await requestAbcExtraction(nudoId, messages, distress);
+  } catch (err) {
+    // El nudo básico ya está guardado; la extracción podrá reintentarse al generar el informe.
+    console.error("Extracción A-B-C al cerrar:", err);
+  }
 }

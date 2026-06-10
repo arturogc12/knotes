@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+﻿import { Link, useLocation } from "react-router-dom";
 import { BookHeart, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -10,15 +10,15 @@ export function Navbar() {
   const isProfessionals = location.pathname === "/profesionales";
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#F7F5F2]/90 backdrop-blur-md border-b border-[#E8D8CC]">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#F5F9FC]/90 backdrop-blur-md border-b border-[#C8DAE8]">
       <div className="w-full px-6 md:px-12">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-[#C17B5C] rounded-xl flex items-center justify-center transition-transform group-hover:scale-105">
+            <div className="w-8 h-8 bg-[#7EB8DA] rounded-xl flex items-center justify-center transition-transform group-hover:scale-105">
               <span className="text-white font-serif italic text-lg font-bold">K</span>
             </div>
-            <span className="font-sans font-semibold text-xl tracking-tight text-[#2D2D2D]">
+            <span className="font-sans font-semibold text-xl tracking-tight text-[#2A3540]">
               K-Notes
             </span>
           </Link>
@@ -27,13 +27,13 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-10">
             <Link
               to={isProfessionals ? "/" : "/profesionales"}
-              className="text-xs font-bold uppercase tracking-[0.15em] text-[#4A4A4A] hover:text-[#C17B5C] transition-colors"
+              className="text-xs font-bold uppercase tracking-[0.15em] text-[#3D4F5C] hover:text-[#7EB8DA] transition-colors"
             >
               {isProfessionals ? "Para Pacientes" : "Para Profesionales"}
             </Link>
             <Link
               to="/login"
-              className="bg-[#C17B5C] text-white px-7 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#A86548] transition-all shadow-sm"
+              className="bg-[#7EB8DA] text-white px-7 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#5A9BC4] transition-all shadow-sm"
             >
               Iniciar Sesión
             </Link>
@@ -43,7 +43,7 @@ export function Navbar() {
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-[#4A4A4A] hover:text-[#2D2D2D] p-2"
+              className="text-[#3D4F5C] hover:text-[#2A3540] p-2"
               aria-label="Menu"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -59,20 +59,20 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-[#E8D8CC] bg-[#F7F5F2] overflow-hidden"
+            className="md:hidden border-t border-[#C8DAE8] bg-[#F5F9FC] overflow-hidden"
           >
             <div className="px-6 py-6 space-y-6 flex flex-col items-center">
               <Link
                 to={isProfessionals ? "/" : "/profesionales"}
                 onClick={() => setIsOpen(false)}
-                className="block text-xs font-bold uppercase tracking-[0.15em] text-[#4A4A4A] hover:text-[#C17B5C]"
+                className="block text-xs font-bold uppercase tracking-[0.15em] text-[#3D4F5C] hover:text-[#7EB8DA]"
               >
                 {isProfessionals ? "Para Pacientes" : "Para Profesionales"}
               </Link>
               <Link
                 to="/login"
                 onClick={() => setIsOpen(false)}
-                className="w-full inline-flex items-center justify-center px-7 py-3 text-xs font-bold uppercase tracking-widest text-white bg-[#C17B5C] rounded-full shadow-sm active:scale-95 transition-transform"
+                className="w-full inline-flex items-center justify-center px-7 py-3 text-xs font-bold uppercase tracking-widest text-white bg-[#7EB8DA] rounded-full shadow-sm active:scale-95 transition-transform"
               >
                 Iniciar Sesión
               </Link>

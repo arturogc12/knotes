@@ -1,10 +1,10 @@
-import { Outlet } from "react-router-dom";
+﻿import { Outlet } from "react-router-dom";
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
 
 function Layout() {
   return (
-    <div className="min-h-screen bg-[#F7F5F2] flex flex-col font-sans selection:bg-[#C17B5C]/20">
+    <div className="min-h-screen bg-[#F5F9FC] flex flex-col font-sans selection:bg-[#7EB8DA]/20">
       <Navbar />
       <Outlet />
       <Footer />

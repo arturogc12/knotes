@@ -4,6 +4,7 @@ export type ChatPhase =
   | "exploration"
   | "socratic"
   | "clarification"
+  | "finalRating"
   | "closing"
   | "closed";
 
@@ -18,6 +19,10 @@ export interface ChatState {
   explorationTurns: number;
   socraticIndex: number;
   clarificationCount: number;
+  distressInitial?: number;
+  distressFinal?: number;
+  finalRatingAsked?: boolean;
+  finalRatingAttempts?: number;
 }
 
 export const INITIAL_CHAT_STATE: ChatState = {
@@ -42,6 +47,13 @@ export async function fetchWelcome(): Promise<ChatApiResponse> {
 }
 
 export async function fetchClosing(
+  history: ChatMessage[],
+  state: ChatState,
+): Promise<ChatApiResponse> {
+  return postChat({ history, state });
+}
+
+export async function fetchFinalRatingQuestion(
   history: ChatMessage[],
   state: ChatState,
 ): Promise<ChatApiResponse> {

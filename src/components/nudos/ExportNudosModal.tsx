@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+﻿import { AnimatePresence, motion } from "motion/react";
 import { FileDown, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ExportPeriod } from "../../../shared/nudo";
@@ -16,7 +16,7 @@ interface ExportNudosModalProps {
 }
 
 export function ExportNudosModal({ open, onClose }: ExportNudosModalProps) {
-  const [exportPeriod, setExportPeriod] = useState<ExportPeriod>("30d");
+  const [exportPeriod, setExportPeriod] = useState<ExportPeriod>("7d");
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [nudoCount, setNudoCount] = useState(0);
@@ -91,7 +91,7 @@ export function ExportNudosModal({ open, onClose }: ExportNudosModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[#2D2D2D]/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#2A3540]/40 backdrop-blur-sm"
             onClick={() => !exporting && onClose()}
           />
 
@@ -103,13 +103,13 @@ export function ExportNudosModal({ open, onClose }: ExportNudosModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.2 }}
-            className="relative w-full max-w-md bg-white/95 border border-[#E8D8CC] rounded-[2rem] p-6 shadow-xl"
+            className="relative w-full max-w-md bg-white/95 border border-[#C8DAE8] rounded-[2rem] p-6 shadow-xl"
           >
             <button
               type="button"
               onClick={onClose}
               disabled={exporting}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-[#5D6D66] hover:text-[#2D2D2D] hover:bg-[#F7F5F2] transition-colors disabled:opacity-50"
+              className="absolute top-4 right-4 p-1.5 rounded-full text-[#5A7080] hover:text-[#2A3540] hover:bg-[#F5F9FC] transition-colors disabled:opacity-50"
               aria-label="Cerrar"
             >
               <X className="w-4 h-4" />
@@ -117,12 +117,12 @@ export function ExportNudosModal({ open, onClose }: ExportNudosModalProps) {
 
             <h2
               id="export-modal-title"
-              className="text-sm font-semibold text-[#2D2D2D] pr-8"
+              className="text-sm font-semibold text-[#2A3540] pr-8"
             >
-              Informe para mi psicólogo
+              Informe clínico para terapeuta
             </h2>
-            <p className="mt-1 text-sm text-[#5D6D66]">
-              Exporta un PDF con todos tus nudos del periodo seleccionado.
+            <p className="mt-1 text-sm text-[#5A7080]">
+              Exporta un PDF de 2 páginas con consolidación semanal y matriz TCC en crudo.
             </p>
 
             <div className="flex flex-wrap gap-2 mt-4">
@@ -137,8 +137,8 @@ export function ExportNudosModal({ open, onClose }: ExportNudosModalProps) {
                   disabled={exporting}
                   className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 ${
                     exportPeriod === id
-                      ? "bg-[#C17B5C] text-white shadow-sm"
-                      : "bg-white/80 text-[#5D6D66] border border-[#E8D8CC] hover:bg-white"
+                      ? "bg-[#7EB8DA] text-white shadow-sm"
+                      : "bg-white/80 text-[#5A7080] border border-[#C8DAE8] hover:bg-white"
                   }`}
                 >
                   {label}
@@ -146,7 +146,7 @@ export function ExportNudosModal({ open, onClose }: ExportNudosModalProps) {
               ))}
             </div>
 
-            <p className="mt-3 text-sm text-[#5D6D66]">
+            <p className="mt-3 text-sm text-[#5A7080]">
               {countLoading
                 ? "Calculando nudos…"
                 : nudoCount === 0
@@ -162,7 +162,7 @@ export function ExportNudosModal({ open, onClose }: ExportNudosModalProps) {
               type="button"
               onClick={handleExport}
               disabled={exporting || countLoading || nudoCount === 0}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[2rem] text-sm font-semibold text-white bg-[#C17B5C] hover:bg-[#A86A4E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[2rem] text-sm font-semibold text-white bg-[#7EB8DA] hover:bg-[#5A9BC4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {exporting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

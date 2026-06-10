@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { shouldShowPwaWelcome } from "../../lib/pwaWelcome";
@@ -22,8 +22,8 @@ export function PwaWelcomeRedirect({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F5F2] flex items-center justify-center font-sans">
-        <div className="w-10 h-10 bg-[#C17B5C] rounded-xl flex items-center justify-center animate-pulse">
+      <div className="min-h-screen bg-[#F5F9FC] flex items-center justify-center font-sans">
+        <div className="w-10 h-10 bg-[#7EB8DA] rounded-xl flex items-center justify-center animate-pulse">
           <span className="text-white font-serif italic text-lg font-bold">K</span>
         </div>
       </div>

@@ -11,6 +11,13 @@ export interface Nudo {
   };
   alternativeThought?: string;
   excerpt: string;
+  chatSessionId?: string;
+  distressScale?: number;
+  distressInitial?: number;
+  distressFinal?: number;
+  beliefLiteral?: string;
+  physiologicalSymptoms?: string[];
+  behavioralPatterns?: string[];
 }
 
 export interface DbNudoRow {
@@ -27,9 +34,23 @@ export interface DbNudoRow {
   abc_consequence: string | null;
   alternative_thought: string | null;
   created_at: string;
+  distress_scale: number | null;
+  distress_initial: number | null;
+  distress_final: number | null;
+  belief_literal: string | null;
+  physiological_symptoms: string[] | null;
+  behavioral_patterns: string[] | null;
 }
 
-const ABC_PENDING = "Pendiente de análisis automático.";
+export const ABC_PENDING = "Pendiente de análisis automático.";
+
+export function isAbcPending(nudo: Nudo): boolean {
+  return (
+    nudo.abc.antecedent === ABC_PENDING ||
+    nudo.abc.belief === ABC_PENDING ||
+    nudo.abc.consequence === ABC_PENDING
+  );
+}
 
 export function mapDbNudo(row: DbNudoRow): Nudo {
   return {
@@ -39,12 +60,19 @@ export function mapDbNudo(row: DbNudoRow): Nudo {
     emotion: row.emotion ?? "—",
     summary: row.summary ?? "",
     excerpt: row.excerpt ?? "",
+    chatSessionId: row.chat_session_id ?? undefined,
     abc: {
       antecedent: row.abc_antecedent ?? ABC_PENDING,
       belief: row.abc_belief ?? ABC_PENDING,
       consequence: row.abc_consequence ?? ABC_PENDING,
     },
     alternativeThought: row.alternative_thought ?? undefined,
+    distressScale: row.distress_scale ?? undefined,
+    distressInitial: row.distress_initial ?? undefined,
+    distressFinal: row.distress_final ?? undefined,
+    beliefLiteral: row.belief_literal ?? undefined,
+    physiologicalSymptoms: row.physiological_symptoms ?? undefined,
+    behavioralPatterns: row.behavioral_patterns ?? undefined,
   };
 }
 

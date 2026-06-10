@@ -4,6 +4,7 @@ export type ChatPhase =
   | "exploration"
   | "socratic"
   | "clarification"
+  | "finalRating"
   | "closing"
   | "closed";
 
@@ -18,6 +19,14 @@ export interface ChatState {
   explorationTurns: number;
   socraticIndex: number;
   clarificationCount: number;
+  /** Intensidad 1-10 reportada por el usuario al inicio de la conversación. */
+  distressInitial?: number;
+  /** Intensidad 1-10 reportada por el usuario al final de la conversación. */
+  distressFinal?: number;
+  /** true cuando la IA ya ha formulado la pregunta de intensidad final. */
+  finalRatingAsked?: boolean;
+  /** Respuestas del usuario en la fase de intensidad final sin dar un número. */
+  finalRatingAttempts?: number;
 }
 
 export const INITIAL_STATE: ChatState = {

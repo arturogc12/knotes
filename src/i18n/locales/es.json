@@ -51,5 +51,19 @@
       "signOut": "Cerrar sesión",
       "signingOut": "Cerrando sesión…"
     }
+  },
+  "chat": {
+    "newConversation": "Nueva conversación",
+    "newConversationConfirm": "¿Empezar una conversación nueva? Perderás el progreso de la conversación actual.",
+    "preparing": "Preparando tu espacio seguro...",
+    "transcribing": "Transcribiendo con ChatGPT...",
+    "voiceHint": {
+      "tapToSpeak": "Pulsa para hablar",
+      "listening": "Escuchando… pulsa de nuevo para enviar",
+      "transcribing": "Transcribiendo tu mensaje…",
+      "closing": "Preparando el cierre de la conversación…",
+      "closed": "La conversación ha terminado",
+      "waitTyping": "Espera a que termine de escribir…"
+    }
   }
 }

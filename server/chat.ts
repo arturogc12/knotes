@@ -1,14 +1,16 @@
 import type { Request, Response } from "express";
-import { generateChatReply } from "./openai.js";
+import { generateChatReply, type AiReply } from "./openai.js";
 import type { ChatRequestBody, ChatResponseBody, ChatState } from "./types.js";
 import { INITIAL_STATE } from "./types.js";
 
-function advanceState(
-  state: ChatState,
-  situationUnderstood: boolean,
-  enoughContext: boolean,
-): ChatState {
+const MAX_FINAL_RATING_ATTEMPTS = 2;
+
+function advanceState(state: ChatState, ai: AiReply): ChatState {
   const next = { ...state };
+
+  if (!next.distressInitial && ai.distressInitial) {
+    next.distressInitial = ai.distressInitial;
+  }
 
   switch (next.phase) {
     case "welcome":
@@ -17,14 +19,14 @@ function advanceState(
 
     case "venting":
       next.ventCount++;
-      if (enoughContext || next.ventCount >= 3) {
+      if (ai.enoughContext || next.ventCount >= 3) {
         next.phase = "exploration";
       }
       break;
 
     case "exploration":
       next.explorationTurns++;
-      if (situationUnderstood) {
+      if (ai.situationUnderstood) {
         next.phase = "socratic";
         next.socraticIndex = 0;
       }
@@ -41,9 +43,23 @@ function advanceState(
     case "clarification":
       next.clarificationCount++;
       if (next.clarificationCount >= 3) {
+        next.phase = "finalRating";
+        next.finalRatingAsked = false;
+        next.finalRatingAttempts = 0;
+      }
+      break;
+
+    case "finalRating": {
+      if (!next.distressFinal && ai.distressFinal) {
+        next.distressFinal = ai.distressFinal;
+      }
+      const attempts = (next.finalRatingAttempts ?? 0) + 1;
+      next.finalRatingAttempts = attempts;
+      if (next.distressFinal || attempts >= MAX_FINAL_RATING_ATTEMPTS) {
         next.phase = "closing";
       }
       break;
+    }
 
     case "closing":
       next.phase = "closed";
@@ -65,7 +81,7 @@ export async function handleChat(req: Request, res: Response) {
 
     if (state.phase === "closed" && userMessage) {
       const response: ChatResponseBody = {
-        reply: "Esta conversación ya ha terminado. Cuando lo necesites, puedes volver a empezar.",
+        reply: "Esta conversación ya ha terminado. Tu nudo está guardado en Mis Nudos. Cuando lo necesites, puedes volver a empezar.",
         state,
       };
       return res.json(response);
@@ -73,17 +89,25 @@ export async function handleChat(req: Request, res: Response) {
 
     // Bienvenida automática (sin mensaje del usuario).
     if (!userMessage && state.phase === "welcome" && history.length === 0) {
-      const { reply } = await generateChatReply([], "welcome", state);
-      const nextState = advanceState(state, false, false);
+      const ai = await generateChatReply([], "welcome", state);
+      const nextState = advanceState(state, ai);
+      const response: ChatResponseBody = { reply: ai.reply, state: nextState };
+      return res.json(response);
+    }
+
+    // Pregunta automática de intensidad final (sin mensaje del usuario).
+    if (!userMessage && state.phase === "finalRating" && !state.finalRatingAsked) {
+      const { reply } = await generateChatReply(history, "finalRating", state);
+      const nextState: ChatState = { ...state, finalRatingAsked: true };
       const response: ChatResponseBody = { reply, state: nextState };
       return res.json(response);
     }
 
     // Cierre experto automático (Fase 5, sin mensaje del usuario).
     if (!userMessage && state.phase === "closing") {
-      const { reply } = await generateChatReply(history, "closing", state);
-      const nextState = advanceState(state, false, false);
-      const response: ChatResponseBody = { reply, state: nextState };
+      const ai = await generateChatReply(history, "closing", state);
+      const nextState = advanceState(state, ai);
+      const response: ChatResponseBody = { reply: ai.reply, state: nextState };
       return res.json(response);
     }
 
@@ -104,14 +128,10 @@ export async function handleChat(req: Request, res: Response) {
       { role: "user" as const, content: userMessage },
     ];
 
-    const { reply, situationUnderstood, enoughContext } = await generateChatReply(
-      updatedHistory,
-      state.phase,
-      state,
-    );
+    const ai = await generateChatReply(updatedHistory, state.phase, state);
 
-    const nextState = advanceState(state, situationUnderstood, enoughContext);
-    const response: ChatResponseBody = { reply, state: nextState };
+    const nextState = advanceState(state, ai);
+    const response: ChatResponseBody = { reply: ai.reply, state: nextState };
     return res.json(response);
   } catch (error) {
     console.error("[chat]", error);

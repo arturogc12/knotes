@@ -48,15 +48,25 @@ export async function createNudo(input: {
   emotion?: string;
   summary: string;
   excerpt: string;
-}): Promise<void> {
-  const { error } = await supabase.from("nudos").insert({
-    user_id: input.userId,
-    chat_session_id: input.chatSessionId,
-    title: input.title,
-    emotion: input.emotion ?? "—",
-    summary: input.summary,
-    excerpt: input.excerpt,
-  });
+  distressInitial?: number;
+  distressFinal?: number;
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from("nudos")
+    .insert({
+      user_id: input.userId,
+      chat_session_id: input.chatSessionId,
+      title: input.title,
+      emotion: input.emotion ?? "—",
+      summary: input.summary,
+      excerpt: input.excerpt,
+      distress_initial: input.distressInitial ?? null,
+      distress_final: input.distressFinal ?? null,
+      distress_scale: input.distressInitial ?? null,
+    })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
+  return data.id;
 }

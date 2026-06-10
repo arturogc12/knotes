@@ -1,19 +1,19 @@
 # 06 · Sistema de diseño
 
-El sistema visual se define con **Tailwind CSS 4** mediante el bloque `@theme` en `src/index.css`. La estética es serena, "wellness", con tonos terracota cálidos sobre fondo tipo papel.
+El sistema visual se define con **Tailwind CSS 4** mediante el bloque `@theme` en `src/index.css`. La estética es serena, "wellness", con tonos azul pastel claros sobre fondo tipo papel.
 
 ## Paleta de colores
 
 | Token | Valor | Uso |
 |-------|-------|-----|
-| `--color-brand-alabaster` | `#F7F5F2` | Fondo principal (alabastro / papel). |
-| `--color-brand-terracotta` | `#C17B5C` | Color de marca (terracota): CTAs, acentos, logo. |
-| `--color-brand-terracotta-dark` | `#A86548` | Hover de botones primarios. |
-| `--color-brand-terracotta-light` | `#D4957A` | Terracota secundario. |
-| `--color-brand-sand` | `#F2E8DE` | Fondos suaves, badges, paneles. |
-| `--color-brand-cream` | `#FFF6F0` | Fondos crema (burbujas IA, cabeceras). |
-| `--color-brand-warm` | `#F0E4D8` | Superficies cálidas. |
-| `--color-brand-border` | `#E8D8CC` | Bordes sutiles. |
+| `--color-brand-alabaster` | `#F5F9FC` | Fondo principal (azul blanco muy claro). |
+| `--color-brand-terracotta` | `#7EB8DA` | Color de marca (azul cielo pastel): CTAs, acentos, logo. |
+| `--color-brand-terracotta-dark` | `#5A9BC4` | Hover de botones primarios. |
+| `--color-brand-terracotta-light` | `#A8D4EC` | Acento secundario. |
+| `--color-brand-sand` | `#E3EFF8` | Fondos suaves, badges, paneles. |
+| `--color-brand-cream` | `#EEF6FC` | Superficies hielo (burbujas IA, cabeceras). |
+| `--color-brand-warm` | `#DDEAF5` | Superficies con tinte frío. |
+| `--color-brand-border` | `#C8DAE8` | Bordes sutiles. |
 
 ### Colores usados directamente en JSX (valores arbitrarios)
 
@@ -21,11 +21,11 @@ Además de los tokens, el código usa muchos colores "inline" con la sintaxis `b
 
 | Color | Uso típico |
 |-------|------------|
-| `#2D2D2D` | Texto de titulares (casi negro). |
-| `#4A4A4A` | Texto de cuerpo. |
-| `#5D6D66` | Texto secundario / etiquetas. |
-| `#E8D8CC` | Bordes sutiles. |
-| `#F2E8DE` | Fondos terracota muy claros. |
+| `#2A3540` | Texto de titulares (casi negro, gris-azulado). |
+| `#3D4F5C` | Texto de cuerpo. |
+| `#5A7080` | Texto secundario / etiquetas. |
+| `#C8DAE8` | Bordes sutiles. |
+| `#E3EFF8` | Fondos azul pastel muy claros. |
 
 > **Recomendación:** centralizar estos valores arbitrarios en tokens del `@theme` para mayor coherencia (ver [08 · Roadmap](./08-roadmap.md)).
 
@@ -38,16 +38,16 @@ Importadas desde Google Fonts en `index.css`:
 | `--font-sans` | **Inter** (300–700) | Texto general, UI, titulares. |
 | `--font-display` / `--font-serif` | **Playfair Display** (incluye itálicas) | Acentos elegantes, palabras destacadas en cursiva, logo "K". |
 
-Patrón habitual: titulares en `font-medium` con una palabra clave en `font-serif italic` color terracota.
+Patrón habitual: titulares en `font-medium` con una palabra clave en `font-serif italic` color azul pastel.
 
 ## Patrones visuales recurrentes
 
 - **Esquinas muy redondeadas:** `rounded-[2rem]`, `rounded-[2.5rem]`, `rounded-full` en botones y tarjetas.
-- **Sombras suaves y tintadas:** `shadow-xl shadow-[#C17B5C]/10`.
+- **Sombras suaves y tintadas:** `shadow-xl shadow-[#7EB8DA]/10`.
 - **Glassmorphism:** `bg-white/80 backdrop-blur-md` en navbar, header de chat e inputs.
-- **Badges de sección:** texto en mayúsculas, `tracking-[0.2em]`, `text-[10px]`, fondo `#F2E8DE`.
+- **Badges de sección:** texto en mayúsculas, `tracking-[0.2em]`, `text-[10px]`, fondo `#E3EFF8`.
 - **Animaciones de entrada:** `motion` con `initial={{ opacity: 0, y: 20 }}` → `animate={{ opacity: 1, y: 0 }}`, con `delay` escalonado.
-- **Selección de texto:** `selection:bg-[#C17B5C]/20`.
+- **Selección de texto:** `selection:bg-[#7EB8DA]/20`.
 
 ## Utilidades CSS (`src/index.css`)
 
@@ -81,7 +81,7 @@ En `/chat` con viewport `<768px`:
 - Pantalla fija a `100dvh` sin scroll del documento (`chat-mobile-lock` en `body`).
 - Tres zonas: cabecera 56px, mensajes con scroll independiente (`touch-scroll`), input fijo abajo.
 - Input a 16px mínimo (anti-zoom iOS). Safe area en el footer.
-- En `md+` se mantiene la tarjeta cálida con bordes `rounded-[2rem]` dentro del shell habitual (sin fullscreen).
+- En `md+` se mantiene la tarjeta con bordes `rounded-[2rem]` dentro del shell habitual (sin fullscreen).
 
 ### Drawer móvil de paciente
 
@@ -95,7 +95,7 @@ En toda la app logueada con viewport `<768px` (`PatientMobileDrawer`):
 ### Pantalla bienvenida PWA (`/bienvenida`)
 
 - Badge "Instala K-Notes" + título y subtítulo centrados.
-- **CTA principal arriba:** botón "Entrar al Chat" terracota `rounded-[2rem]`.
+- **CTA principal arriba:** botón "Entrar al Chat" azul pastel `rounded-[2rem]`.
 - Bloque opcional "¿Quieres acceso directo?" debajo del CTA.
 - Tabs iOS/Android (indicador animado con `layoutId`) y pasos numerados con iconos sutiles.
 - Misma paleta y tipografía que el resto de la app.

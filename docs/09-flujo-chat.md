@@ -26,15 +26,17 @@ La conversación es **secuencial y guiada**. La IA avanza por fases y controla c
 ```
 Fase 0  Bienvenida (1 mensaje IA)
    ▼
-Fase 1  Escucha, desahogo y contexto (máx. 3 mensajes del usuario)
+Fase 1  Escucha, desahogo y contexto + intensidad inicial 1-10 (máx. 3 mensajes del usuario)
    ▼
-Fase 2  Exploración TCC (preguntas hasta entender la situación)
+Fase 2  Exploración TCC (preguntas hasta completar la ficha A-B-C)
    ▼
 Fase 3  Preguntas socráticas (exactamente 3)
    ▼
 Fase 4  Aclaración final (máx. 3 mensajes adicionales)
    ▼
-Fase 5  Cierre experto (1 mensaje IA)
+Fase 4b Intensidad final 1-10 (1 pregunta IA + respuesta del usuario)
+   ▼
+Fase 5  Cierre experto (1 mensaje IA, confirma que el nudo está guardado)
 ```
 
 ---
@@ -54,6 +56,7 @@ Fase 5  Cierre experto (1 mensaje IA)
 
 - La IA **escucha** y deja que el usuario se desahogue durante **un máximo de 3 mensajes**.
 - Por cada mensaje, la IA **valida** emocionalmente **y hace una pregunta breve para coger contexto** (qué pasó, con quién, cuándo, qué sintió). El objetivo es **avanzar cuanto antes** hacia las preguntas clínicas y el análisis funcional, sin perder el tono de acompañamiento.
+- En el **primer turno**, la IA pide además que el usuario **puntúe del 1 al 10 la intensidad** de la emoción que siente en ese momento (**intensidad inicial**, `distressInitial`). Si el usuario no da el número, la IA insiste con suavidad en los turnos siguientes (incluida la exploración) hasta capturarlo.
 - Reglas:
   - **Sin ser repetitiva**: variar validación y preguntas.
   - **Sin interpretar ni aconsejar todavía**: acompaña y recoge datos, no hace preguntas socráticas aún.
@@ -71,11 +74,15 @@ Si la IA ya tiene **contexto suficiente** (situación + emoción + detonante), p
 ### Fase 2 · Exploración TCC
 
 - La IA empieza a **ejercer de psicólogo experto en TCC**.
-- Hace **preguntas abiertas** para **entender la situación** concreta: qué pasó (antecedente), qué pensó/hizo (conducta/pensamiento) y qué consecuencia tuvo (esquema **A-B-C**).
-- El número de preguntas es **flexible**: las necesarias hasta tener una **comprensión clara** del episodio.
+- Hace **preguntas abiertas** para **completar todos los datos de la ficha del episodio** (esquema **A-B-C**):
+  - **Antecedente (A):** qué pasó, cuándo, dónde y con quién.
+  - **Pensamiento automático (B):** qué se dijo a sí mismo, en sus **palabras literales**.
+  - **Consecuencia (C):** qué emoción sintió y qué hizo después (evitación, comprobación, retirada).
+  - **Síntomas físicos:** qué notó en el cuerpo (taquicardia, nudo en el estómago, tensión...).
+- El número de preguntas es **flexible**: las necesarias hasta tener una **comprensión clara** del episodio y la ficha completa.
 - En cuanto la IA considera que **ha entendido la situación**, pasa a la **Fase 3**.
 
-> Objetivo interno: identificar el **pensamiento automático** central y la situación que lo dispara, para poder cuestionarlo después.
+> Objetivo interno: identificar el **pensamiento automático** central y la situación que lo dispara, para poder cuestionarlo después, y dejar recopilada toda la información de la **tarjeta del nudo**.
 
 ---
 
@@ -102,16 +109,27 @@ Cada pregunta se hace **tras la respuesta del usuario** a la anterior.
 
 ---
 
+### Fase 4b · Intensidad final (1-10)
+
+- Tras la aclaración, la IA envía **un mensaje automático** pidiendo al usuario que **vuelva a puntuar del 1 al 10** la intensidad de su emoción tras la conversación (**intensidad final**, `distressFinal`).
+- Si el usuario no da un número, la IA lo pide **una vez más** con suavidad; al segundo intento sin número, se pasa al cierre igualmente (la intensidad final queda sin registrar).
+- En cuanto se captura el número, se pasa al **cierre experto**.
+
+---
+
 ### Fase 5 · Cierre experto
 
 - La IA **cierra la conversación como lo haría un terapeuta experto**:
   - Recoge brevemente el **análisis funcional de la conducta** (A-B-C: antecedente, pensamiento/conducta, consecuencia).
+  - Compara la **intensidad inicial y final** (p. ej. 8/10 → 4/10): si bajó, lo refleja como logro del usuario; si no, lo normaliza.
+  - **Confirma explícitamente que el nudo ya está guardado** con toda la información, listo para generar el informe o volver a visitarlo en "Mis Nudos".
   - Refuerza el avance del usuario (sin paternalismo).
   - Deja una sensación de contención y continuidad.
 - **Un único mensaje** de cierre.
+- Antes de mostrar este mensaje, el cliente **guarda el nudo completo** (sesión + tarjeta con A-B-C, intensidades, síntomas y conductas), de modo que la confirmación sea cierta.
 
 > Ejemplo:
-> *"Hoy has hecho algo valioso: mirar de frente ese pensamiento y ponerlo a prueba. Llévate esa pregunta contigo. Aquí estaré cuando lo necesites."*
+> *"Hoy has hecho algo valioso: mirar de frente ese pensamiento y ponerlo a prueba. Tu nudo queda guardado con todo lo que hemos trabajado, para tu informe o para cuando quieras volver a él. Aquí estaré cuando lo necesites."*
 
 ---
 
@@ -120,20 +138,23 @@ Cada pregunta se hace **tras la respuesta del usuario** a la anterior.
 | Fase | Quién habla | Límite |
 |------|-------------|--------|
 | 0 · Bienvenida | IA | 1 mensaje |
-| 1 · Desahogo + contexto | Usuario | máx. 3 mensajes (IA valida y pregunta contexto) |
-| 2 · Exploración TCC | IA pregunta | hasta entender la situación |
+| 1 · Desahogo + contexto | Usuario | máx. 3 mensajes (IA valida, pregunta contexto y pide intensidad inicial 1-10) |
+| 2 · Exploración TCC | IA pregunta | hasta completar la ficha A-B-C |
 | 3 · Socráticas | IA pregunta | exactamente 3 |
 | 4 · Aclaración | Usuario / IA | máx. 3 intercambios adicionales |
-| 5 · Cierre | IA | 1 mensaje |
+| 4b · Intensidad final | IA pregunta / Usuario | 1 pregunta (máx. 2 intentos) |
+| 5 · Cierre | IA | 1 mensaje (guarda el nudo y lo confirma) |
 
 ### Implementación server-side
 
 Las fases se mapean a `ChatPhase` en `server/types.ts` y avanzan en `server/chat.ts`:
 
-`welcome` → `venting` → `exploration` → `socratic` → `clarification` → `closing` → `closed`
+`welcome` → `venting` → `exploration` → `socratic` → `clarification` → `finalRating` → `closing` → `closed`
 
 - **Exploración:** solo avanza cuando la IA marca `situationUnderstood: true` (sin tope fijo de turnos).
-- **Cierre (Fase 5):** fase `closing`; el cliente solicita el mensaje automáticamente tras completar la aclaración, igual que la bienvenida inicial.
+- **Intensidades:** la IA devuelve `distressInitial` / `distressFinal` (1-10) en su JSON cuando el usuario puntúa; se acumulan en `ChatState` y se persisten en el nudo (`distress_initial`, `distress_final`; `distress_scale` = inicial, usada por el informe).
+- **Intensidad final (Fase 4b):** fase `finalRating`; el cliente solicita la pregunta automáticamente al terminar la aclaración (flag `finalRatingAsked`). Se avanza a `closing` al capturar el número o tras 2 respuestas sin número.
+- **Cierre (Fase 5):** fase `closing`; el cliente solicita el mensaje automáticamente, **guarda el nudo completo** (sesión + tarjeta con A-B-C, intensidades, síntomas y conductas, vía `/api/extract-abc` síncrono) y después muestra el mensaje de cierre que confirma el guardado.
 
 ---
 
@@ -185,10 +206,10 @@ Implementación en `src/pages/Chat.tsx` dentro de `PatientAppLayout` (`src/compo
 
 | Elemento | Estilo |
 |----------|--------|
-| Burbujas IA | Fondo crema `#FFF6F0`, borde `#F0E4D8`, `rounded-[1.5rem]` |
-| Burbujas usuario | Gradiente terracota `#C17B5C` → `#A86548`, alineadas a la derecha |
-| Cabecera del chat | Fondo `#FFF6F0`, título "Conversación" en serif itálica terracota |
-| Input | Fondo `#F7F5F2`, borde `#E8D8CC`, `rounded-full`; micrófono + enviar |
+| Burbujas IA | Fondo hielo `#EEF6FC`, borde `#DDEAF5`, `rounded-[1.5rem]` |
+| Burbujas usuario | Gradiente azul pastel `#7EB8DA` → `#5A9BC4`, alineadas a la derecha |
+| Cabecera del chat | Fondo `#EEF6FC`, título "Conversación" en serif itálica azul pastel |
+| Input | Fondo `#F5F9FC`, borde `#C8DAE8`, `rounded-full`; micrófono + enviar |
 
 ### Móvil (`<768px`) — pantalla completa
 
@@ -212,9 +233,16 @@ El chat ocupa el 100% del viewport como una app nativa (estilo ChatGPT):
 - Input a **16px** en móvil (anti-zoom iOS Safari).
 - Con `100dvh`, al abrir el teclado el layout flex se contrae: cabecera fija, mensajes con scroll propio, input encima del teclado.
 
+### Persistencia de sesión
+
+- La conversación activa se guarda en `ChatSessionContext` y en `sessionStorage` (clave `knotes:chat-session:<userId>`).
+- Al cambiar entre **Conversación**, **Mis Nudos** o **Ajustes**, o al recargar la página (F5), se restaura la misma conversación.
+- Solo se reinicia al pulsar **Nueva conversación** en la cabecera del chat, al cerrar la pestaña del navegador o al cerrar sesión.
+- Implementación: `src/contexts/ChatSessionContext.tsx`, montado en `PatientAppLayout`.
+
 ### Desktop (`md+`) — tarjeta centrada
 
-- Tarjeta con `rounded-[2rem]`, borde `#E8D8CC` y sombra suave.
+- Tarjeta con `rounded-[2rem]`, borde `#C8DAE8` y sombra suave.
 - Shell completo visible: logo, pestañas superiores (Conversación / Mis Nudos), icono de Ajustes.
 - Contenedor centrado: `px-4` + `max-w-4xl mx-auto` en el shell (mismos márgenes que nudos y ajustes).
 - Sin `position: fixed` ni fullscreen.

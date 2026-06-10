@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { buildSystemPrompt } from "./prompt.js";
-import type { ChatMessage, ChatPhase } from "./types.js";
+import type { ChatMessage, ChatPhase, ChatState } from "./types.js";
 
 let client: OpenAI | null = null;
 
@@ -21,23 +21,26 @@ export interface AiReply {
   reply: string;
   situationUnderstood: boolean;
   enoughContext: boolean;
+  distressInitial: number | null;
+  distressFinal: number | null;
+}
+
+function parseDistress(value: unknown): number | null {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(10, Math.max(1, Math.round(n)));
 }
 
 export async function generateChatReply(
   history: ChatMessage[],
   phase: ChatPhase,
-  counters: {
-    ventCount: number;
-    explorationTurns: number;
-    socraticIndex: number;
-    clarificationCount: number;
-  },
+  state: ChatState,
 ): Promise<AiReply> {
   const openai = getOpenAIClient();
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: buildSystemPrompt(phase, counters) },
+    { role: "system", content: buildSystemPrompt(phase, state) },
     ...history.map((m) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
@@ -66,5 +69,7 @@ export async function generateChatReply(
     reply,
     situationUnderstood: Boolean(parsed.situationUnderstood),
     enoughContext: Boolean(parsed.enoughContext),
+    distressInitial: parseDistress(parsed.distressInitial),
+    distressFinal: parseDistress(parsed.distressFinal),
   };
 }
