@@ -46,7 +46,8 @@ export default function Chat() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingTypingRef = useRef<{ id: number; fullText: string } | null>(null);
   const bootstrappedRef = useRef(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const welcomeStartedRef = useRef<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const historyRef = useRef(history);
   const chatStateRef = useRef(chatState);
@@ -55,14 +56,35 @@ export default function Chat() {
   chatStateRef.current = chatState;
   savedRef.current = saved;
 
-  const typeAiMessage = useCallback(
-    (fullText: string): Promise<void> =>
-      new Promise((resolve) => {
-        setIsTyping(true);
-        const id = nextId();
-        pendingTypingRef.current = { id, fullText };
-        setMessages((prev) => [...prev, { id, role: "ai", text: "" }]);
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const el = scrollContainerRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    }
+  }, []);
 
+  const flushScroll = useCallback(
+    (behavior: ScrollBehavior = "auto") =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          scrollToBottom(behavior);
+          requestAnimationFrame(() => resolve());
+        });
+      }),
+    [scrollToBottom],
+  );
+
+  const typeAiMessage = useCallback(
+    async (fullText: string): Promise<void> => {
+      setIsTyping(true);
+      const id = nextId();
+      pendingTypingRef.current = { id, fullText };
+      setMessages((prev) => [...prev, { id, role: "ai", text: "" }]);
+
+      const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
+      await flushScroll(isMobile ? "auto" : "smooth");
+
+      return new Promise((resolve) => {
         let i = 0;
         intervalRef.current = setInterval(() => {
           i++;
@@ -77,8 +99,9 @@ export default function Chat() {
             resolve();
           }
         }, TYPING_SPEED_MS);
-      }),
-    [nextId, setMessages],
+      });
+    },
+    [nextId, setMessages, flushScroll],
   );
 
   const persistClosedSession = useCallback(
@@ -142,6 +165,10 @@ export default function Chat() {
 
       setError(null);
       setMessages((prev) => [...prev, { id: nextId(), role: "user", text: trimmed }]);
+
+      const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
+      await flushScroll(isMobile ? "auto" : "smooth");
+
       setIsTyping(true);
 
       try {
@@ -177,12 +204,13 @@ export default function Chat() {
       setHistory,
       setMessages,
       typeAiMessage,
+      flushScroll,
     ],
   );
 
   const handleVoiceTranscript = useCallback(
-    (text: string) => {
-      void sendMessage(text);
+    async (text: string) => {
+      await sendMessage(text);
     },
     [sendMessage],
   );
@@ -194,6 +222,7 @@ export default function Chat() {
       notSupported: t("chat.voiceError.notSupported"),
       audioTooShort: t("chat.voiceError.audioTooShort"),
       apiUnavailable: t("chat.voiceError.apiUnavailable"),
+      noSpeechDetected: t("chat.voiceError.noSpeechDetected"),
     },
   );
 
@@ -228,10 +257,18 @@ export default function Chat() {
   }, [startSessionIfNeeded]);
 
   useEffect(() => {
-    if (messages.length > 0) return;
+    const welcomeKey = `${sessionGeneration}:${history[0]?.content ?? ""}`;
+
+    if (messages.length > 0) {
+      welcomeStartedRef.current = welcomeKey;
+      return;
+    }
 
     const first = history[0];
     if (!first || first.role !== "assistant") return;
+
+    if (welcomeStartedRef.current === welcomeKey) return;
+    welcomeStartedRef.current = welcomeKey;
 
     let cancelled = false;
     setIsLoading(true);
@@ -256,45 +293,39 @@ export default function Chat() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = null;
       setIsTyping(false);
+      welcomeStartedRef.current = null;
       if (pendingTypingRef.current) {
         const { id } = pendingTypingRef.current;
         setMessages((prev) => prev.filter((m) => m.id !== id));
         pendingTypingRef.current = null;
       }
     };
-  }, [messages.length, history, sessionGeneration, typeAiMessage, setMessages]);
+  }, [sessionGeneration, history, typeAiMessage, setMessages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping, isTranscribing]);
+    scrollToBottom("auto");
+  }, [isRecording, isTranscribing, error, scrollToBottom]);
 
-  useEffect(() => {
-    const mq = window.matchMedia(MOBILE_MEDIA);
-    const syncBodyLock = () => {
-      document.body.classList.toggle("chat-mobile-lock", mq.matches);
-    };
-    syncBodyLock();
-    mq.addEventListener("change", syncBodyLock);
-    return () => {
-      mq.removeEventListener("change", syncBodyLock);
-      document.body.classList.remove("chat-mobile-lock");
-    };
-  }, []);
+  const isClosed = chatState.phase === "closed";
+  const isClosing = chatState.phase === "closing";
+  const voiceBlocked = isTyping || isTranscribing || isClosed || isClosing;
+  const isNewConversationDisabled =
+    newConversationDisabled || isTyping || isLoading || isTranscribing;
 
-  const getVoiceBlockReason = (): string | null => {
-    if (isTranscribing) return t("chat.voiceHint.transcribing");
-    if (chatState.phase === "closing") return t("chat.voiceHint.closing");
-    if (chatState.phase === "closed") return t("chat.voiceHint.closed");
-    if (isTyping) return t("chat.voiceHint.waitTyping");
-    return null;
-  };
+  const voiceHint = isRecording
+    ? t("chat.voiceHint.listening")
+    : isTyping
+      ? t("chat.voiceHint.waitTyping")
+      : isTranscribing
+        ? t("chat.voiceHint.transcribing")
+        : isClosing
+          ? t("chat.voiceHint.closing")
+          : isClosed
+            ? t("chat.voiceHint.closed")
+            : t("chat.voiceHint.tapToSpeak");
 
   const handleMicClick = async () => {
-    const blockReason = getVoiceBlockReason();
-    if (blockReason) {
-      setError(blockReason);
-      return;
-    }
+    if (voiceBlocked && !isRecording) return;
     setError(null);
     try {
       await toggleRecording();
@@ -309,23 +340,18 @@ export default function Chat() {
     void startNewConversation();
   };
 
-  const isClosed = chatState.phase === "closed";
-  const isClosing = chatState.phase === "closing";
-  const voiceBlocked = isTyping || isTranscribing || isClosed || isClosing;
-  const isNewConversationDisabled =
-    newConversationDisabled || isTyping || isLoading || isTranscribing;
-
-  const voiceHint = isRecording
-    ? t("chat.voiceHint.listening")
-    : isTranscribing
-      ? t("chat.voiceHint.transcribing")
-      : isClosing
-        ? t("chat.voiceHint.closing")
-        : isClosed
-          ? t("chat.voiceHint.closed")
-          : isTyping
-            ? t("chat.voiceHint.waitTyping")
-            : t("chat.voiceHint.tapToSpeak");
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_MEDIA);
+    const syncBodyLock = () => {
+      document.body.classList.toggle("chat-mobile-lock", mq.matches);
+    };
+    syncBodyLock();
+    mq.addEventListener("change", syncBodyLock);
+    return () => {
+      mq.removeEventListener("change", syncBodyLock);
+      document.body.classList.remove("chat-mobile-lock");
+    };
+  }, []);
 
   return (
     <div className="max-md:fixed max-md:inset-0 max-md:h-dvh max-md:w-screen max-md:z-30 max-md:overflow-hidden max-md:overscroll-none md:relative md:flex md:flex-col md:flex-1 md:min-h-[calc(100vh-12rem)]">
@@ -378,7 +404,10 @@ export default function Chat() {
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll p-4 md:p-5 flex flex-col gap-4">
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll p-4 md:p-5 flex flex-col gap-4"
+        >
           {isLoading && messages.length === 0 && (
             <p className="text-center text-sm text-[#5A7080] animate-pulse py-8">
               {t("chat.preparing")}
@@ -407,25 +436,17 @@ export default function Chat() {
             );
           })}
 
-          {isTranscribing && (
-            <p className="text-center text-xs text-[#5A7080] animate-pulse">
-              {t("chat.transcribing")}
-            </p>
-          )}
-
           {error && (
             <p className="text-center text-xs text-red-600/80 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
               {error}
             </p>
           )}
-
-          <div ref={bottomRef} />
         </div>
 
         <div className="shrink-0 bg-[#EEF6FC]/40 border-t border-[#C8DAE8]/80 px-4 py-6 max-md:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <div className="flex flex-col items-center gap-4">
             <p
-              className={`text-sm text-center transition-colors ${
+              className={`text-sm text-center min-h-5 transition-colors ${
                 isRecording
                   ? "text-red-600 font-medium"
                   : isTranscribing

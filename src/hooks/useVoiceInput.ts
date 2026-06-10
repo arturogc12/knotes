@@ -8,18 +8,21 @@ const MIME_CANDIDATES = [
   "audio/aac",
 ];
 
+const MIN_RECORDING_MS = 700;
+
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === "undefined") return undefined;
   return MIME_CANDIDATES.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
 export function useVoiceInput(
-  onTranscript: (text: string) => void,
+  onTranscript: (text: string) => void | Promise<void>,
   onError?: (message: string) => void,
   messages?: {
     notSupported?: string;
     audioTooShort?: string;
     apiUnavailable?: string;
+    noSpeechDetected?: string;
   },
 ) {
   const [isRecording, setIsRecording] = useState(false);
@@ -27,6 +30,7 @@ export function useVoiceInput(
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const mimeTypeRef = useRef<string>("audio/webm");
+  const recordingStartedAtRef = useRef<number>(0);
 
   const startRecording = useCallback(async () => {
     if (isRecording || isTranscribing) return;
@@ -55,6 +59,16 @@ export function useVoiceInput(
       recorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
 
+        const durationMs = Date.now() - recordingStartedAtRef.current;
+        if (durationMs < MIN_RECORDING_MS) {
+          setIsTranscribing(false);
+          onError?.(
+            messages?.audioTooShort ??
+              "La grabación es demasiado corta. Habla un poco más e inténtalo de nuevo.",
+          );
+          return;
+        }
+
         const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
         if (blob.size < 1000) {
           setIsTranscribing(false);
@@ -66,8 +80,11 @@ export function useVoiceInput(
         }
 
         try {
-          const text = await transcribeAudio(blob, messages?.apiUnavailable);
-          onTranscript(text);
+          const text = await transcribeAudio(blob, {
+            apiUnavailable: messages?.apiUnavailable,
+            noSpeechDetected: messages?.noSpeechDetected,
+          });
+          await onTranscript(text);
         } catch (e) {
           onError?.(e instanceof Error ? e.message : "Error al transcribir el audio");
         } finally {
@@ -76,6 +93,7 @@ export function useVoiceInput(
       };
 
       mediaRecorderRef.current = recorder;
+      recordingStartedAtRef.current = Date.now();
       recorder.start(250);
       setIsRecording(true);
     } catch (e) {

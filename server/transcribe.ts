@@ -1,11 +1,14 @@
 import type { Request, Response } from "express";
 import { toFile } from "openai";
 import { getOpenAIClient } from "./openai.js";
+import { isUsableTranscript, type TranscriptSegment } from "./transcribeValidation.js";
 
 interface TranscribeBody {
   audio?: string;
   mimeType?: string;
 }
+
+const NO_SPEECH_ERROR = "No se detectó voz en la grabación";
 
 export async function handleTranscribe(req: Request, res: Response) {
   try {
@@ -28,11 +31,19 @@ export async function handleTranscribe(req: Request, res: Response) {
       file,
       model: "whisper-1",
       language: "es",
+      temperature: 0,
+      response_format: "verbose_json",
     });
 
     const text = result.text.trim();
-    if (!text) {
-      return res.status(400).json({ error: "No se detectó voz en la grabación" });
+    const segments: TranscriptSegment[] = (result.segments ?? []).map((seg) => ({
+      text: seg.text,
+      avg_logprob: seg.avg_logprob,
+      no_speech_prob: seg.no_speech_prob,
+    }));
+
+    if (!isUsableTranscript(text, segments)) {
+      return res.status(400).json({ error: NO_SPEECH_ERROR });
     }
 
     return res.json({ text });

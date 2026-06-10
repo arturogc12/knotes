@@ -68,7 +68,8 @@
     "voiceError": {
       "audioTooShort": "La grabación es demasiado corta. Habla un poco más e inténtalo de nuevo.",
       "notSupported": "Tu navegador no soporta grabación de voz. Prueba con otro navegador o escribe tu mensaje.",
-      "apiUnavailable": "No se pudo conectar con el servicio de transcripción. Comprueba tu conexión e inténtalo de nuevo."
+      "apiUnavailable": "No se pudo conectar con el servicio de transcripción. Comprueba tu conexión e inténtalo de nuevo.",
+      "noSpeechDetected": "No se detectó voz en la grabación. Inténtalo de nuevo."
     }
   }
 }

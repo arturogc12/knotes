@@ -6,10 +6,21 @@ interface TranscribeError {
   error: string;
 }
 
+interface TranscribeOptions {
+  apiUnavailable?: string;
+  noSpeechDetected?: string;
+}
+
+const NO_SPEECH_SERVER_ERROR = "No se detectó voz en la grabación";
+
 export async function transcribeAudio(
   blob: Blob,
-  apiUnavailableMessage = "No se pudo conectar con el servicio de transcripción. Comprueba tu conexión e inténtalo de nuevo.",
+  options?: TranscribeOptions,
 ): Promise<string> {
+  const apiUnavailableMessage =
+    options?.apiUnavailable ??
+    "No se pudo conectar con el servicio de transcripción. Comprueba tu conexión e inténtalo de nuevo.";
+
   const base64 = await blobToBase64(blob);
 
   let res: Response;
@@ -32,6 +43,12 @@ export async function transcribeAudio(
 
   if (!res.ok) {
     const err = data as TranscribeError;
+    if (res.status === 400 && err.error === NO_SPEECH_SERVER_ERROR) {
+      throw new Error(
+        options?.noSpeechDetected ??
+          "No se detectó voz en la grabación. Inténtalo de nuevo.",
+      );
+    }
     throw new Error(err.error || "Error al transcribir el audio");
   }
 
