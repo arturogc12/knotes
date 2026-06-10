@@ -8,7 +8,7 @@ import { usePatientDrawer } from "../contexts/PatientDrawerContext";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import { useNewConversation } from "../hooks/useNewConversation";
 import { saveClosedChatSession } from "../lib/chatSessionsApi";
-import { delayForChunk, wordChunks } from "../lib/chatTypewriter";
+import { TYPING_MS_PER_CHAR } from "../lib/chatTypewriter";
 import {
   fetchClosing,
   fetchFinalRatingQuestion,
@@ -44,7 +44,7 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastScrollHeightRef = useRef(0);
   const pendingTypingRef = useRef<{ id: number; fullText: string } | null>(null);
   const bootstrappedRef = useRef(false);
@@ -133,9 +133,9 @@ export default function Chat() {
     [scrollToBottom],
   );
 
-  const clearTypingTimeout = useCallback(() => {
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = null;
+  const clearTypingTimer = useCallback(() => {
+    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+    typingIntervalRef.current = null;
   }, []);
 
   const typeAiMessage = useCallback(
@@ -154,41 +154,31 @@ export default function Chat() {
 
       await flushScroll("auto");
 
-      const chunks = wordChunks(fullText);
-
       return new Promise((resolve) => {
-        if (chunks.length === 0) {
+        if (!fullText.length) {
           pendingTypingRef.current = null;
           setIsTyping(false);
           resolve();
           return;
         }
 
-        let index = 0;
-        let accumulated = "";
-
-        const revealNext = () => {
-          accumulated += chunks[index];
-          index++;
+        let i = 0;
+        typingIntervalRef.current = setInterval(() => {
+          i++;
           setMessages((prev) =>
-            prev.map((m) => (m.id === id ? { ...m, text: accumulated } : m)),
+            prev.map((m) => (m.id === id ? { ...m, text: fullText.slice(0, i) } : m)),
           );
           maybeScrollToBottom();
 
-          if (index >= chunks.length) {
-            clearTypingTimeout();
+          if (i >= fullText.length) {
+            clearTypingTimer();
             pendingTypingRef.current = null;
             setIsTyping(false);
             lastScrollHeightRef.current = 0;
             maybeScrollToBottom();
             resolve();
-            return;
           }
-
-          typingTimeoutRef.current = setTimeout(revealNext, delayForChunk(chunks[index]));
-        };
-
-        typingTimeoutRef.current = setTimeout(revealNext, delayForChunk(chunks[0]));
+        }, TYPING_MS_PER_CHAR);
       });
     },
     [
@@ -197,7 +187,7 @@ export default function Chat() {
       flushScroll,
       stickToBottom,
       maybeScrollToBottom,
-      clearTypingTimeout,
+      clearTypingTimer,
     ],
   );
 
@@ -381,7 +371,7 @@ export default function Chat() {
     let cancelled = false;
     setIsLoading(true);
     setError(null);
-    clearTypingTimeout();
+    clearTypingTimer();
     pendingTypingRef.current = null;
 
     (async () => {
@@ -398,7 +388,7 @@ export default function Chat() {
 
     return () => {
       cancelled = true;
-      clearTypingTimeout();
+      clearTypingTimer();
       setIsTyping(false);
       setIsAwaitingReply(false);
       welcomeStartedRef.current = null;
@@ -408,7 +398,7 @@ export default function Chat() {
         pendingTypingRef.current = null;
       }
     };
-  }, [sessionGeneration, welcomeContent, typeAiMessage, setMessages, clearTypingTimeout]);
+  }, [sessionGeneration, welcomeContent, typeAiMessage, setMessages, clearTypingTimer]);
 
   useEffect(() => {
     restoredScrollDoneRef.current = false;
@@ -474,7 +464,7 @@ export default function Chat() {
   };
 
   const handleNewConversation = () => {
-    clearTypingTimeout();
+    clearTypingTimer();
     pendingTypingRef.current = null;
     setIsAwaitingReply(false);
     void startNewConversation();
