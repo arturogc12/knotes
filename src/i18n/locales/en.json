@@ -64,6 +64,11 @@
       "closing": "Preparing to close the conversation…",
       "closed": "The conversation has ended",
       "waitTyping": "Wait until it finishes typing…"
+    },
+    "voiceError": {
+      "audioTooShort": "The recording is too short. Speak a bit longer and try again.",
+      "notSupported": "Your browser does not support voice recording. Try another browser or type your message.",
+      "apiUnavailable": "Could not connect to the transcription service. Check your connection and try again."
     }
   }
 }

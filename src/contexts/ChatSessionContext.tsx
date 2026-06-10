@@ -33,7 +33,7 @@ interface StoredChatSession {
 }
 
 type StartSessionResult =
-  | { kind: "restored" }
+  | { kind: "restored"; animateWelcome: boolean }
   | { kind: "new"; reply: string; state: ChatState };
 
 type ChatSessionContextValue = {
@@ -206,7 +206,7 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     }
 
     if (session.initialized && session.history.length > 0) {
-      return { kind: "restored" };
+      return { kind: "restored", animateWelcome: shouldAnimateWelcome(session) };
     }
 
     const stored = loadFromStorage(userId);
@@ -214,11 +214,11 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
       const restored = ensureUiMessages(stored);
       setSession(restored);
       nextIdRef.current = restored.nextMessageId;
-      return { kind: "restored" };
+      return { kind: "restored", animateWelcome: shouldAnimateWelcome(restored) };
     }
 
     if (startingRef.current) {
-      return { kind: "restored" };
+      return { kind: "restored", animateWelcome: false };
     }
 
     startingRef.current = true;

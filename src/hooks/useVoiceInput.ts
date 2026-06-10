@@ -1,25 +1,51 @@
 import { useCallback, useRef, useState } from "react";
 import { transcribeAudio } from "../lib/transcribeApi";
 
+const MIME_CANDIDATES = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/mp4",
+  "audio/aac",
+];
+
+function pickMimeType(): string | undefined {
+  if (typeof MediaRecorder === "undefined") return undefined;
+  return MIME_CANDIDATES.find((type) => MediaRecorder.isTypeSupported(type));
+}
+
 export function useVoiceInput(
   onTranscript: (text: string) => void,
   onError?: (message: string) => void,
+  messages?: {
+    notSupported?: string;
+    audioTooShort?: string;
+    apiUnavailable?: string;
+  },
 ) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const mimeTypeRef = useRef<string>("audio/webm");
 
   const startRecording = useCallback(async () => {
     if (isRecording || isTranscribing) return;
 
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      throw new Error(
+        messages?.notSupported ??
+          "Tu navegador no soporta grabación de voz. Prueba con otro navegador o escribe tu mensaje.",
+      );
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
+      const mimeType = pickMimeType();
+      mimeTypeRef.current = mimeType ?? "audio/webm";
 
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
       chunksRef.current = [];
 
       recorder.ondataavailable = (e) => {
@@ -27,16 +53,20 @@ export function useVoiceInput(
       };
 
       recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
+        stream.getTracks().forEach((track) => track.stop());
 
-        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
         if (blob.size < 1000) {
           setIsTranscribing(false);
+          onError?.(
+            messages?.audioTooShort ??
+              "La grabación es demasiado corta. Habla un poco más e inténtalo de nuevo.",
+          );
           return;
         }
 
         try {
-          const text = await transcribeAudio(blob);
+          const text = await transcribeAudio(blob, messages?.apiUnavailable);
           onTranscript(text);
         } catch (e) {
           onError?.(e instanceof Error ? e.message : "Error al transcribir el audio");
@@ -46,16 +76,23 @@ export function useVoiceInput(
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start();
+      recorder.start(250);
       setIsRecording(true);
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("navegador")) {
+        throw e;
+      }
       throw new Error("No se pudo acceder al micrófono");
     }
-  }, [isRecording, isTranscribing, onTranscript]);
+  }, [isRecording, isTranscribing, messages, onError, onTranscript]);
 
   const stopRecording = useCallback(() => {
     const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state !== "recording") return;
+    if (!recorder || recorder.state !== "recording") {
+      setIsRecording(false);
+      setIsTranscribing(false);
+      return;
+    }
 
     setIsRecording(false);
     setIsTranscribing(true);

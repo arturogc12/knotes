@@ -1,10 +1,9 @@
 ﻿import { AnimatePresence, motion } from "motion/react";
-import { Layers, MessageCircle, Settings, SquarePen, X } from "lucide-react";
+import { Layers, MessageCircle, Settings, X } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { usePatientDrawer } from "../../contexts/PatientDrawerContext";
-import { useNewConversation } from "../../hooks/useNewConversation";
 
 const navItems = [
   { to: "/chat", labelKey: "nav.conversation" as const, icon: MessageCircle },
@@ -20,13 +19,6 @@ export function PatientMobileDrawer() {
   const { isOpen, close } = usePatientDrawer();
   const { pathname } = useLocation();
   const { t } = useTranslation();
-  const { startNewConversation, disabled: newConversationDisabled } = useNewConversation();
-
-  const handleNewConversation = () => {
-    void startNewConversation().then((started) => {
-      if (started) close({ skipHistory: true });
-    });
-  };
 
   useEffect(() => {
     close({ skipHistory: true });
@@ -82,15 +74,6 @@ export function PatientMobileDrawer() {
             </div>
 
             <nav className="flex-1 px-4 py-6 space-y-2">
-              <button
-                type="button"
-                onClick={handleNewConversation}
-                disabled={newConversationDisabled}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium text-[#5A7080] hover:text-[#2A3540] hover:bg-white/80 border border-transparent hover:border-[#C8DAE8] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <SquarePen className="w-5 h-5" />
-                {t("chat.newConversation")}
-              </button>
               {navItems.map(({ to, labelKey, icon: Icon }) => {
                 const active = isActive(pathname, to);
                 return (

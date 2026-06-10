@@ -1,10 +1,9 @@
 ﻿import { AnimatePresence, motion } from "motion/react";
 import { Link, useLocation, useNavigationType, useOutlet } from "react-router-dom";
-import { Layers, Menu, MessageCircle, Settings, SquarePen } from "lucide-react";
+import { Layers, Menu, MessageCircle, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ChatSessionProvider } from "../../contexts/ChatSessionContext";
 import { PatientDrawerProvider, usePatientDrawer } from "../../contexts/PatientDrawerContext";
-import { useNewConversation } from "../../hooks/useNewConversation";
 import { PatientMobileDrawer } from "./PatientMobileDrawer";
 
 const tabs = [
@@ -45,7 +44,6 @@ function PatientAppLayoutInner() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
   const { open } = usePatientDrawer();
-  const { startNewConversation, disabled: newConversationDisabled } = useNewConversation();
   const settingsActive = pathname === "/ajustes";
   const isChatRoute = pathname === "/chat";
 
@@ -114,15 +112,6 @@ function PatientAppLayoutInner() {
                 );
               })}
             </nav>
-            <button
-              type="button"
-              onClick={() => void startNewConversation()}
-              disabled={newConversationDisabled}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium text-[#5A7080] hover:text-[#2A3540] bg-white/70 border border-[#C8DAE8] hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <SquarePen className="w-4 h-4" />
-              {t("chat.newConversation")}
-            </button>
           </div>
         </div>
       </header>

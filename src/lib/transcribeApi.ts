@@ -8,16 +8,27 @@ interface TranscribeError {
 
 export async function transcribeAudio(
   blob: Blob,
+  apiUnavailableMessage = "No se pudo conectar con el servicio de transcripción. Comprueba tu conexión e inténtalo de nuevo.",
 ): Promise<string> {
   const base64 = await blobToBase64(blob);
 
-  const res = await fetch("/api/transcribe", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ audio: base64, mimeType: blob.type || "audio/webm" }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audio: base64, mimeType: blob.type || "audio/webm" }),
+    });
+  } catch {
+    throw new Error(apiUnavailableMessage);
+  }
 
-  const data = (await res.json()) as TranscribeResponse | TranscribeError;
+  let data: TranscribeResponse | TranscribeError;
+  try {
+    data = (await res.json()) as TranscribeResponse | TranscribeError;
+  } catch {
+    throw new Error(apiUnavailableMessage);
+  }
 
   if (!res.ok) {
     const err = data as TranscribeError;

@@ -19,8 +19,6 @@ import {
 const TYPING_SPEED_MS = 15;
 const MOBILE_MEDIA = "(max-width: 767px)";
 
-const deliveredWelcomeKeys = new Set<string>();
-
 export default function Chat() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -192,6 +190,11 @@ export default function Chat() {
   const { isRecording, isTranscribing, toggleRecording } = useVoiceInput(
     handleVoiceTranscript,
     (msg) => setError(msg),
+    {
+      notSupported: t("chat.voiceError.notSupported"),
+      audioTooShort: t("chat.voiceError.audioTooShort"),
+      apiUnavailable: t("chat.voiceError.apiUnavailable"),
+    },
   );
 
   useEffect(() => {
@@ -202,13 +205,20 @@ export default function Chat() {
 
     (async () => {
       try {
-        await startSessionIfNeeded();
+        const result = await startSessionIfNeeded();
+        if (cancelled) return;
+
+        const pendingWelcome =
+          result.kind === "new" ||
+          (result.kind === "restored" && result.animateWelcome);
+        if (!pendingWelcome) {
+          setIsLoading(false);
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "No se pudo iniciar el chat");
+          setIsLoading(false);
         }
-      } finally {
-        if (!cancelled) setIsLoading(false);
       }
     })();
 
@@ -222,10 +232,6 @@ export default function Chat() {
 
     const first = history[0];
     if (!first || first.role !== "assistant") return;
-
-    const deliveryKey = `${sessionGeneration}:${first.content}`;
-    if (deliveredWelcomeKeys.has(deliveryKey)) return;
-    deliveredWelcomeKeys.add(deliveryKey);
 
     let cancelled = false;
     setIsLoading(true);
@@ -248,11 +254,11 @@ export default function Chat() {
     return () => {
       cancelled = true;
       if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setIsTyping(false);
       if (pendingTypingRef.current) {
-        const { id, fullText } = pendingTypingRef.current;
-        setMessages((prev) =>
-          prev.map((m) => (m.id === id ? { ...m, text: fullText } : m)),
-        );
+        const { id } = pendingTypingRef.current;
+        setMessages((prev) => prev.filter((m) => m.id !== id));
         pendingTypingRef.current = null;
       }
     };
@@ -275,16 +281,21 @@ export default function Chat() {
     };
   }, []);
 
+  const getVoiceBlockReason = (): string | null => {
+    if (isTranscribing) return t("chat.voiceHint.transcribing");
+    if (chatState.phase === "closing") return t("chat.voiceHint.closing");
+    if (chatState.phase === "closed") return t("chat.voiceHint.closed");
+    if (isTyping) return t("chat.voiceHint.waitTyping");
+    return null;
+  };
+
   const handleMicClick = async () => {
-    if (
-      isTyping ||
-      isLoading ||
-      isTranscribing ||
-      chatState.phase === "closed" ||
-      chatState.phase === "closing"
-    ) {
+    const blockReason = getVoiceBlockReason();
+    if (blockReason) {
+      setError(blockReason);
       return;
     }
+    setError(null);
     try {
       await toggleRecording();
     } catch (e) {
@@ -300,8 +311,8 @@ export default function Chat() {
 
   const isClosed = chatState.phase === "closed";
   const isClosing = chatState.phase === "closing";
-  const voiceDisabled = isTyping || isLoading || isTranscribing || isClosed || isClosing;
-  const mobileNewConversationDisabled =
+  const voiceBlocked = isTyping || isTranscribing || isClosed || isClosing;
+  const isNewConversationDisabled =
     newConversationDisabled || isTyping || isLoading || isTranscribing;
 
   const voiceHint = isRecording
@@ -312,7 +323,7 @@ export default function Chat() {
         ? t("chat.voiceHint.closing")
         : isClosed
           ? t("chat.voiceHint.closed")
-          : isTyping || isLoading
+          : isTyping
             ? t("chat.voiceHint.waitTyping")
             : t("chat.voiceHint.tapToSpeak");
 
@@ -335,7 +346,7 @@ export default function Chat() {
             <button
               type="button"
               onClick={handleNewConversation}
-              disabled={mobileNewConversationDisabled}
+              disabled={isNewConversationDisabled}
               aria-label={t("chat.newConversation")}
               title={t("chat.newConversation")}
               className="shrink-0 p-2 rounded-xl text-[#5A7080] hover:text-[#2A3540] hover:bg-white/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -344,13 +355,26 @@ export default function Chat() {
             </button>
           </div>
 
-          <div className="hidden md:flex w-full flex-col items-center justify-center px-5 py-3">
-            <h1 className="text-center text-sm font-semibold text-[#2A3540] tracking-tight">
-              <span className="font-serif italic text-[#7EB8DA]">Conversación</span>
-            </h1>
-            <p className="text-center text-[10px] text-[#5A7080] mt-0.5">
-              Un espacio seguro para desahogarte
-            </p>
+          <div className="hidden md:flex w-full h-full items-center px-5 gap-2">
+            <div className="w-10 shrink-0" aria-hidden="true" />
+            <div className="flex-1 flex flex-col items-center justify-center min-w-0">
+              <h1 className="text-center text-sm font-semibold text-[#2A3540] tracking-tight">
+                <span className="font-serif italic text-[#7EB8DA]">Conversación</span>
+              </h1>
+              <p className="text-center text-[10px] text-[#5A7080] mt-0.5">
+                Un espacio seguro para desahogarte
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleNewConversation}
+              disabled={isNewConversationDisabled}
+              aria-label={t("chat.newConversation")}
+              title={t("chat.newConversation")}
+              className="shrink-0 p-2 rounded-xl text-[#5A7080] hover:text-[#2A3540] hover:bg-white/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <SquarePen className="w-5 h-5" />
+            </button>
           </div>
         </header>
 
@@ -422,9 +446,13 @@ export default function Chat() {
               <button
                 type="button"
                 onClick={() => void handleMicClick()}
-                disabled={voiceDisabled}
+                aria-disabled={voiceBlocked && !isRecording}
                 aria-label={isRecording ? "Detener grabación y enviar" : "Pulsa para hablar"}
-                className={`relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none ${
+                className={`relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                  voiceBlocked && !isRecording
+                    ? "opacity-50 cursor-not-allowed shadow-none"
+                    : ""
+                } ${
                   isRecording
                     ? "bg-red-500 text-white shadow-red-500/30 scale-105"
                     : "bg-gradient-to-br from-[#7EB8DA] to-[#5A9BC4] text-white shadow-[#7EB8DA]/30 hover:scale-105 active:scale-95"

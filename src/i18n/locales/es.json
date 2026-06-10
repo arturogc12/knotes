@@ -64,6 +64,11 @@
       "closing": "Preparando el cierre de la conversación…",
       "closed": "La conversación ha terminado",
       "waitTyping": "Espera a que termine de escribir…"
+    },
+    "voiceError": {
+      "audioTooShort": "La grabación es demasiado corta. Habla un poco más e inténtalo de nuevo.",
+      "notSupported": "Tu navegador no soporta grabación de voz. Prueba con otro navegador o escribe tu mensaje.",
+      "apiUnavailable": "No se pudo conectar con el servicio de transcripción. Comprueba tu conexión e inténtalo de nuevo."
     }
   }
 }
