@@ -18,6 +18,7 @@ import {
 
 const TYPING_SPEED_MS = 15;
 const MOBILE_MEDIA = "(max-width: 767px)";
+const SCROLL_NEAR_BOTTOM_THRESHOLD = 80;
 
 export default function Chat() {
   const { t } = useTranslation();
@@ -48,6 +49,10 @@ export default function Chat() {
   const bootstrappedRef = useRef(false);
   const welcomeStartedRef = useRef<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const lastBubbleRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const restoredScrollDoneRef = useRef(false);
 
   const historyRef = useRef(history);
   const chatStateRef = useRef(chatState);
@@ -56,11 +61,36 @@ export default function Chat() {
   chatStateRef.current = chatState;
   savedRef.current = saved;
 
+  const stickToBottom = useCallback(() => {
+    shouldAutoScrollRef.current = true;
+  }, []);
+
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const bottom = bottomRef.current;
+    if (bottom) {
+      bottom.scrollIntoView({ block: "end", behavior });
+      return;
+    }
     const el = scrollContainerRef.current;
     if (el) {
       el.scrollTo({ top: el.scrollHeight, behavior });
     }
+  }, []);
+
+  const maybeScrollToBottom = useCallback(
+    (behavior: ScrollBehavior = "auto") => {
+      if (shouldAutoScrollRef.current) {
+        scrollToBottom(behavior);
+      }
+    },
+    [scrollToBottom],
+  );
+
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    shouldAutoScrollRef.current = distance < SCROLL_NEAR_BOTTOM_THRESHOLD;
   }, []);
 
   const flushScroll = useCallback(
@@ -77,12 +107,12 @@ export default function Chat() {
   const typeAiMessage = useCallback(
     async (fullText: string): Promise<void> => {
       setIsTyping(true);
+      stickToBottom();
       const id = nextId();
       pendingTypingRef.current = { id, fullText };
       setMessages((prev) => [...prev, { id, role: "ai", text: "" }]);
 
-      const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
-      await flushScroll(isMobile ? "auto" : "smooth");
+      await flushScroll("auto");
 
       return new Promise((resolve) => {
         let i = 0;
@@ -91,17 +121,19 @@ export default function Chat() {
           setMessages((prev) =>
             prev.map((m) => (m.id === id ? { ...m, text: fullText.slice(0, i) } : m)),
           );
+          maybeScrollToBottom("auto");
           if (i >= fullText.length) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             intervalRef.current = null;
             pendingTypingRef.current = null;
             setIsTyping(false);
+            maybeScrollToBottom("auto");
             resolve();
           }
         }, TYPING_SPEED_MS);
       });
     },
-    [nextId, setMessages, flushScroll],
+    [nextId, setMessages, flushScroll, stickToBottom, maybeScrollToBottom],
   );
 
   const persistClosedSession = useCallback(
@@ -164,6 +196,7 @@ export default function Chat() {
       if (!trimmed || phase === "closed" || phase === "closing") return;
 
       setError(null);
+      stickToBottom();
       setMessages((prev) => [...prev, { id: nextId(), role: "user", text: trimmed }]);
 
       const isMobile = window.matchMedia(MOBILE_MEDIA).matches;
@@ -205,6 +238,7 @@ export default function Chat() {
       setMessages,
       typeAiMessage,
       flushScroll,
+      stickToBottom,
     ],
   );
 
@@ -256,8 +290,10 @@ export default function Chat() {
     };
   }, [startSessionIfNeeded]);
 
+  const welcomeContent = history[0]?.content;
+
   useEffect(() => {
-    const welcomeKey = `${sessionGeneration}:${history[0]?.content ?? ""}`;
+    const welcomeKey = `${sessionGeneration}:${welcomeContent ?? ""}`;
 
     if (messages.length > 0) {
       welcomeStartedRef.current = welcomeKey;
@@ -300,11 +336,34 @@ export default function Chat() {
         pendingTypingRef.current = null;
       }
     };
-  }, [sessionGeneration, history, typeAiMessage, setMessages]);
+  }, [sessionGeneration, welcomeContent, typeAiMessage, setMessages]);
 
   useEffect(() => {
+    restoredScrollDoneRef.current = false;
+  }, [sessionGeneration]);
+
+  useEffect(() => {
+    if (messages.length === 0 || isTyping || isLoading) return;
+    if (restoredScrollDoneRef.current) return;
+    restoredScrollDoneRef.current = true;
+    stickToBottom();
+    void flushScroll("auto");
+  }, [messages.length, isTyping, isLoading, stickToBottom, flushScroll]);
+
+  useEffect(() => {
+    const el = lastBubbleRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      maybeScrollToBottom("auto");
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [messages.length, isTyping, maybeScrollToBottom]);
+
+  useEffect(() => {
+    stickToBottom();
     scrollToBottom("auto");
-  }, [isRecording, isTranscribing, error, scrollToBottom]);
+  }, [isRecording, isTranscribing, stickToBottom, scrollToBottom]);
 
   const isClosed = chatState.phase === "closed";
   const isClosing = chatState.phase === "closing";
@@ -323,6 +382,10 @@ export default function Chat() {
           : isClosed
             ? t("chat.voiceHint.closed")
             : t("chat.voiceHint.tapToSpeak");
+
+  const footerStatus = error ?? voiceHint;
+  const showFooterStatus =
+    !!error || isRecording || isTranscribing || isTyping || isClosing || isClosed;
 
   const handleMicClick = async () => {
     if (voiceBlocked && !isRecording) return;
@@ -406,6 +469,7 @@ export default function Chat() {
 
         <div
           ref={scrollContainerRef}
+          onScroll={handleScroll}
           className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-scroll p-4 md:p-5 flex flex-col gap-4"
         >
           {isLoading && messages.length === 0 && (
@@ -420,6 +484,7 @@ export default function Chat() {
             return (
               <motion.div
                 key={m.id}
+                ref={isLast ? lastBubbleRef : undefined}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={
@@ -436,31 +501,37 @@ export default function Chat() {
             );
           })}
 
-          {error && (
-            <p className="text-center text-xs text-red-600/80 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
-              {error}
-            </p>
-          )}
+          <div ref={bottomRef} aria-hidden="true" className="shrink-0 h-px" />
         </div>
 
-        <div className="shrink-0 bg-[#EEF6FC]/40 border-t border-[#C8DAE8]/80 px-4 py-6 max-md:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <div className="flex flex-col items-center gap-4">
-            <p
-              className={`text-sm text-center min-h-5 transition-colors ${
-                isRecording
-                  ? "text-red-600 font-medium"
-                  : isTranscribing
-                    ? "text-[#5A7080] animate-pulse"
-                    : "text-[#5A7080]"
-              }`}
-            >
-              {voiceHint}
-            </p>
+        <div
+          className={`shrink-0 bg-[#EEF6FC]/40 border-t border-[#C8DAE8]/80 px-4 max-md:pb-[max(1rem,env(safe-area-inset-bottom))] ${
+            showFooterStatus ? "py-5" : "py-4"
+          }`}
+        >
+          <div
+            className={`flex flex-col items-center ${showFooterStatus ? "gap-3" : "gap-0"}`}
+          >
+            {showFooterStatus && (
+              <p
+                className={`text-sm text-center px-2 transition-colors ${
+                  error
+                    ? "text-red-600 font-medium"
+                    : isRecording
+                      ? "text-red-600 font-medium"
+                      : isTranscribing
+                        ? "text-[#5A7080] animate-pulse"
+                        : "text-[#5A7080]"
+                }`}
+              >
+                {footerStatus}
+              </p>
+            )}
 
             <div className="relative flex items-center justify-center">
               {isRecording && (
                 <span
-                  className="absolute inset-0 m-auto w-24 h-24 md:w-28 md:h-28 rounded-full bg-red-400/30 animate-ping"
+                  className="absolute inset-0 m-auto w-32 h-32 md:w-36 md:h-36 rounded-full bg-red-400/30 animate-ping"
                   aria-hidden="true"
                 />
               )}
@@ -469,7 +540,7 @@ export default function Chat() {
                 onClick={() => void handleMicClick()}
                 aria-disabled={voiceBlocked && !isRecording}
                 aria-label={isRecording ? "Detener grabación y enviar" : "Pulsa para hablar"}
-                className={`relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                className={`relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center transition-all shadow-lg ${
                   voiceBlocked && !isRecording
                     ? "opacity-50 cursor-not-allowed shadow-none"
                     : ""
@@ -480,9 +551,9 @@ export default function Chat() {
                 }`}
               >
                 {isRecording ? (
-                  <Square className="w-8 h-8 md:w-9 md:h-9 fill-current" />
+                  <Square className="w-10 h-10 md:w-11 md:h-11 fill-current" />
                 ) : (
-                  <Mic className="w-9 h-9 md:w-10 md:h-10" />
+                  <Mic className="w-11 h-11 md:w-12 md:h-12" />
                 )}
               </button>
             </div>
