@@ -128,7 +128,7 @@ Cada pregunta se hace **tras la respuesta del usuario** a la anterior.
   - Refuerza el avance del usuario (sin paternalismo).
   - Deja una sensación de contención y continuidad.
 - **Un único mensaje** de cierre.
-- Antes de mostrar este mensaje, el cliente **guarda el nudo completo** (sesión + tarjeta con A-B-C, intensidades, síntomas y conductas), de modo que la confirmación sea cierta.
+- Antes de mostrar este mensaje, el cliente **finaliza el nudo** (marca la sesión como cerrada, completa la tarjeta con A-B-C vía `/api/extract-abc` y confirma el guardado). Si la extracción A-B-C falla, el nudo queda guardado igualmente y se avisa al usuario de que el análisis se completará al revisar Mis Nudos o al generar el informe.
 
 > Ejemplo:
 > *"Hoy has hecho algo valioso: mirar de frente ese pensamiento y ponerlo a prueba. Tu nudo queda guardado con todo lo que hemos trabajado, para tu informe o para cuando quieras volver a él. Aquí estaré cuando lo necesites."*
@@ -156,7 +156,8 @@ Las fases se mapean a `ChatPhase` en `server/types.ts` y avanzan en `server/chat
 - **Exploración:** solo avanza cuando la IA marca `situationUnderstood: true` (sin tope fijo de turnos).
 - **Intensidades:** la IA devuelve `distressInitial` / `distressFinal` (1-10) en su JSON cuando el usuario puntúa; se acumulan en `ChatState` y se persisten en el nudo (`distress_initial`, `distress_final`; `distress_scale` = inicial, usada por el informe).
 - **Intensidad final (Fase 4b):** fase `finalRating`; el cliente solicita la pregunta automáticamente al terminar la aclaración (flag `finalRatingAsked`). Se avanza a `closing` al capturar el número o tras 2 respuestas sin número.
-- **Cierre (Fase 5):** fase `closing`; el cliente solicita el mensaje automáticamente, **guarda el nudo completo** (sesión + tarjeta con A-B-C, intensidades, síntomas y conductas, vía `/api/extract-abc` síncrono) y después muestra el mensaje de cierre que confirma el guardado.
+- **Persistencia incremental:** tras la bienvenida y en cada turno completado, el cliente sincroniza un borrador en Supabase (`chat_sessions` con `closed_at` nulo + `nudos` con `status = draft`). Las intensidades se actualizan en el nudo borrador en cuanto se capturan. Los borradores no aparecen en Mis Nudos.
+- **Cierre (Fase 5):** fase `closing`; el cliente solicita el mensaje automáticamente, llama a `finalizeClosedSession` (cierra la sesión existente, marca el nudo `complete`, ejecuta `/api/extract-abc`) y después muestra el mensaje de cierre. `markSaved` solo se activa tras un guardado exitoso.
 
 ---
 
@@ -237,7 +238,8 @@ El chat ocupa el 100% del viewport como una app nativa (estilo ChatGPT):
 
 ### Persistencia de sesión
 
-- La conversación activa se guarda en `ChatSessionContext` y en `sessionStorage` (clave `knotes:chat-session:<userId>`).
+- La conversación activa se guarda en `ChatSessionContext` y en `sessionStorage` (clave `knotes:chat-session:<userId>`), incluyendo `chatSessionId` y `nudoId` del borrador en Supabase.
+- En paralelo, cada turno sincroniza el borrador en Supabase (`chat_sessions` + `nudos` draft) vía `src/lib/chatSessionsApi.ts`.
 - Al cambiar entre **Conversación**, **Mis Nudos** o **Ajustes**, o al recargar la página (F5), se restaura la misma conversación.
 - Solo se reinicia al pulsar **Nueva conversación** en la cabecera del chat, al cerrar la pestaña del navegador o al cerrar sesión.
 - Implementación: `src/contexts/ChatSessionContext.tsx`, montado en `PatientAppLayout`.

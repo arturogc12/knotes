@@ -1,9 +1,12 @@
+export type NudoStatus = "draft" | "complete";
+
 export interface Nudo {
   id: string;
   date: string;
   title: string;
   emotion: string;
   summary: string;
+  status?: NudoStatus;
   abc: {
     antecedent: string;
     belief: string;
@@ -40,6 +43,7 @@ export interface DbNudoRow {
   belief_literal: string | null;
   physiological_symptoms: string[] | null;
   behavioral_patterns: string[] | null;
+  status: NudoStatus;
 }
 
 export const ABC_PENDING = "Pendiente de análisis automático.";
@@ -73,6 +77,7 @@ export function mapDbNudo(row: DbNudoRow): Nudo {
     beliefLiteral: row.belief_literal ?? undefined,
     physiologicalSymptoms: row.physiological_symptoms ?? undefined,
     behavioralPatterns: row.behavioral_patterns ?? undefined,
+    status: row.status ?? "complete",
   };
 }
 

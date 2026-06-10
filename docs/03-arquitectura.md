@@ -84,22 +84,23 @@ Paciente escribe en /chat
         ▼
   OpenAI (ChatGPT)  → responde según fases TCC (ver 09-flujo-chat.md)
         ▼
-  Al cerrar conversación → saveClosedChatSession (Supabase)
+  Cada turno  →  borrador en Supabase (chat_sessions + nudos status=draft)
+        ▼
+  Al cerrar  →  finalizeClosedSession + POST /api/extract-abc (A-B-C)
 ```
 
-**Nudos y export (parcial):**
+**Nudos y export (implementado):**
 
 ```
-Conversación cerrada  →  chat_sessions + nudos (Supabase)
+Conversación cerrada  →  chat_sessions (closed_at) + nudos (status=complete)
         ▼
-  /nudos  →  listado filtrado por user_id (RLS)
+  /nudos  →  listado filtrado por user_id y status=complete (RLS)
         ▼
-  POST /api/export  →  PDF consolidado A-B-C
+  POST /api/export  →  PDF consolidado A-B-C (reintenta extracción si ABC pendiente)
 ```
 
 **Previsto** (ver [08 · Roadmap](./08-roadmap.md)):
 
-- Extracción automática del esquema A-B-C en el cierre del chat.
 - Panel real del terapeuta.
 
 ## Convenciones de la arquitectura

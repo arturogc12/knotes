@@ -7,7 +7,12 @@ import { useChatSession } from "../contexts/ChatSessionContext";
 import { usePatientDrawer } from "../contexts/PatientDrawerContext";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import { useNewConversation } from "../hooks/useNewConversation";
-import { saveClosedChatSession } from "../lib/chatSessionsApi";
+import {
+  ensureDraftChatSession,
+  ensureDraftNudo,
+  finalizeClosedSession,
+  syncDraftNudoFromMessages,
+} from "../lib/chatSessionsApi";
 import { TYPING_MS_PER_CHAR } from "../lib/chatTypewriter";
 import {
   fetchClosing,
@@ -18,6 +23,8 @@ import {
 } from "../lib/chatApi";
 const MOBILE_MEDIA = "(max-width: 767px)";
 const SCROLL_NEAR_BOTTOM_THRESHOLD = 80;
+const ABC_PENDING_NOTE =
+  "\n\nTu nudo queda guardado. El análisis A-B-C se completará automáticamente al revisarlo en Mis Nudos o al generar tu informe.";
 
 export default function Chat() {
   const { t } = useTranslation();
@@ -28,9 +35,12 @@ export default function Chat() {
     history,
     chatState,
     saved,
+    chatSessionId,
+    nudoId,
     setMessages,
     setHistory,
     setChatState,
+    setPersistenceIds,
     nextId,
     markSaved,
     startSessionIfNeeded,
@@ -59,9 +69,13 @@ export default function Chat() {
   const historyRef = useRef(history);
   const chatStateRef = useRef(chatState);
   const savedRef = useRef(saved);
+  const chatSessionIdRef = useRef(chatSessionId);
+  const nudoIdRef = useRef(nudoId);
   historyRef.current = history;
   chatStateRef.current = chatState;
   savedRef.current = saved;
+  chatSessionIdRef.current = chatSessionId;
+  nudoIdRef.current = nudoId;
 
   const stickToBottom = useCallback(() => {
     shouldAutoScrollRef.current = true;
@@ -191,22 +205,79 @@ export default function Chat() {
     ],
   );
 
+  const syncTurnToSupabase = useCallback(
+    async (currentHistory: ChatMessage[], currentState: ChatState) => {
+      if (!user || savedRef.current) return;
+
+      try {
+        const distress = {
+          initial: currentState.distressInitial,
+          final: currentState.distressFinal,
+        };
+        const sessionId = await ensureDraftChatSession(
+          user.id,
+          chatSessionIdRef.current,
+          currentHistory,
+          currentState.phase,
+          distress,
+        );
+        if (sessionId !== chatSessionIdRef.current) {
+          chatSessionIdRef.current = sessionId;
+          setPersistenceIds({ chatSessionId: sessionId });
+        }
+
+        const hasUserMessage = currentHistory.some((m) => m.role === "user");
+
+        if (hasUserMessage) {
+          const nextNudoId = await ensureDraftNudo(
+            user.id,
+            nudoIdRef.current,
+            sessionId,
+            currentHistory,
+            distress,
+          );
+          if (nextNudoId !== nudoIdRef.current) {
+            nudoIdRef.current = nextNudoId;
+            setPersistenceIds({ nudoId: nextNudoId });
+          }
+        } else if (nudoIdRef.current) {
+          await syncDraftNudoFromMessages(nudoIdRef.current, currentHistory, distress);
+        }
+      } catch (syncErr) {
+        console.error("Error sincronizando borrador:", syncErr);
+      }
+    },
+    [user, setPersistenceIds],
+  );
+
   const persistClosedSession = useCallback(
     async (
       finalHistory: ChatMessage[],
       closingReply: string,
       closedState: ChatState,
-    ) => {
-      if (!user || savedRef.current) return;
-      markSaved();
+    ): Promise<"ok" | "abc_pending" | "save_failed" | "already_saved"> => {
+      if (!user || savedRef.current) return "already_saved";
+
       try {
-        await saveClosedChatSession(user.id, finalHistory, closingReply, {
-          initial: closedState.distressInitial,
-          final: closedState.distressFinal,
-        });
+        const { abcExtractionOk } = await finalizeClosedSession(
+          user.id,
+          {
+            chatSessionId: chatSessionIdRef.current,
+            nudoId: nudoIdRef.current,
+          },
+          finalHistory,
+          closingReply,
+          {
+            initial: closedState.distressInitial,
+            final: closedState.distressFinal,
+          },
+        );
+        markSaved();
+        return abcExtractionOk ? "ok" : "abc_pending";
       } catch (persistErr) {
         console.error("Error guardando conversación:", persistErr);
         setError("La conversación terminó, pero no pudimos guardar el nudo.");
+        return "save_failed";
       }
     },
     [user, markSaved],
@@ -222,11 +293,19 @@ export default function Chat() {
       setHistory(finalHistory);
       setChatState(closedState);
 
+      let replyToShow = reply;
       if (closedState.phase === "closed") {
-        await persistClosedSession(finalHistory, reply, closedState);
+        const persistResult = await persistClosedSession(
+          finalHistory,
+          reply,
+          closedState,
+        );
+        if (persistResult === "abc_pending") {
+          replyToShow = `${reply}${ABC_PENDING_NOTE}`;
+        }
       }
 
-      await typeAiMessage(reply);
+      await typeAiMessage(replyToShow);
     },
     [persistClosedSession, setHistory, setChatState, typeAiMessage],
   );
@@ -237,11 +316,13 @@ export default function Chat() {
         history,
         state,
       );
-      setHistory([...history, { role: "assistant", content: reply }]);
+      const newHistory = [...history, { role: "assistant", content: reply }];
+      setHistory(newHistory);
       setChatState(nextState);
       await typeAiMessage(reply);
+      await syncTurnToSupabase(newHistory, nextState);
     },
-    [setHistory, setChatState, typeAiMessage],
+    [setHistory, setChatState, typeAiMessage, syncTurnToSupabase],
   );
 
   const sendMessage = useCallback(
@@ -278,6 +359,7 @@ export default function Chat() {
         setHistory(newHistory);
         setChatState(state);
         await typeAiMessage(reply, thinkingId);
+        await syncTurnToSupabase(newHistory, state);
 
         if (state.phase === "finalRating" && !state.finalRatingAsked) {
           await deliverFinalRatingQuestion(newHistory, state);
@@ -294,6 +376,7 @@ export default function Chat() {
     [
       deliverClosingMessage,
       deliverFinalRatingQuestion,
+      syncTurnToSupabase,
       nextId,
       setChatState,
       setHistory,
@@ -377,6 +460,12 @@ export default function Chat() {
     (async () => {
       try {
         await typeAiMessage(first.content);
+        if (user) {
+          await syncTurnToSupabase(
+            [{ role: "assistant", content: first.content }],
+            chatStateRef.current,
+          );
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "No se pudo iniciar el chat");
@@ -398,7 +487,15 @@ export default function Chat() {
         pendingTypingRef.current = null;
       }
     };
-  }, [sessionGeneration, welcomeContent, typeAiMessage, setMessages, clearTypingTimer]);
+  }, [
+    sessionGeneration,
+    welcomeContent,
+    typeAiMessage,
+    setMessages,
+    clearTypingTimer,
+    syncTurnToSupabase,
+    user,
+  ]);
 
   useEffect(() => {
     restoredScrollDoneRef.current = false;

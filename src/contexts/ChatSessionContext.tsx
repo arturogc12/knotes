@@ -30,6 +30,8 @@ interface StoredChatSession {
   saved: boolean;
   initialized: boolean;
   generation: number;
+  chatSessionId?: string;
+  nudoId?: string;
 }
 
 type StartSessionResult =
@@ -41,6 +43,8 @@ type ChatSessionContextValue = {
   history: ChatMessage[];
   chatState: ChatState;
   saved: boolean;
+  chatSessionId?: string;
+  nudoId?: string;
   setMessages: (
     updater: UiMessage[] | ((prev: UiMessage[]) => UiMessage[]),
   ) => void;
@@ -48,6 +52,7 @@ type ChatSessionContextValue = {
     updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[]),
   ) => void;
   setChatState: (updater: ChatState | ((prev: ChatState) => ChatState)) => void;
+  setPersistenceIds: (ids: { chatSessionId?: string; nudoId?: string }) => void;
   nextId: () => number;
   markSaved: () => void;
   startSessionIfNeeded: () => Promise<StartSessionResult>;
@@ -245,6 +250,14 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
     setSession((prev) => ({ ...prev, saved: true }));
   }, []);
 
+  const setPersistenceIds = useCallback(
+    (ids: { chatSessionId?: string; nudoId?: string }) => {
+      saveImmediateRef.current = true;
+      setSession((prev) => ({ ...prev, ...ids }));
+    },
+    [],
+  );
+
   const startSessionIfNeeded = useCallback(async (): Promise<StartSessionResult> => {
     if (!userId) {
       throw new Error("No hay sesión de usuario");
@@ -278,6 +291,8 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
         saved: false,
         initialized: true,
         generation: session.generation,
+        chatSessionId: undefined,
+        nudoId: undefined,
       });
       nextIdRef.current = 0;
       return { kind: "new", reply, state };
@@ -307,6 +322,8 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
       saved: false,
       initialized: true,
       generation: prev.generation + 1,
+      chatSessionId: undefined,
+      nudoId: undefined,
     }));
 
     return { reply, state };
@@ -318,9 +335,12 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
       history: session.history,
       chatState: session.chatState,
       saved: session.saved,
+      chatSessionId: session.chatSessionId,
+      nudoId: session.nudoId,
       setMessages,
       setHistory,
       setChatState,
+      setPersistenceIds,
       nextId,
       markSaved,
       startSessionIfNeeded,
@@ -332,10 +352,13 @@ export function ChatSessionProvider({ children }: { children: ReactNode }) {
       session.history,
       session.chatState,
       session.saved,
+      session.chatSessionId,
+      session.nudoId,
       session.generation,
       setMessages,
       setHistory,
       setChatState,
+      setPersistenceIds,
       nextId,
       markSaved,
       startSessionIfNeeded,

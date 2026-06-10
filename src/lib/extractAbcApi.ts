@@ -10,7 +10,9 @@ export async function requestAbcExtraction(
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.access_token) return;
+  if (!session?.access_token) {
+    throw new Error("No hay sesión activa para extraer el análisis A-B-C.");
+  }
 
   const res = await fetch("/api/extract-abc", {
     method: "POST",

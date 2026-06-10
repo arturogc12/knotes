@@ -104,6 +104,7 @@ async function fetchNudosForUser(userId: string, period: ExportPeriod): Promise<
     .from("nudos")
     .select("*")
     .eq("user_id", userId)
+    .eq("status", "complete")
     .gte("date", periodCutoff(period))
     .order("date", { ascending: true });
 
